@@ -1,0 +1,54 @@
+#!/usr/bin/python
+# Copyright (C) 2019 Red Hat, Inc., Jake Hunsaker <jhunsake@redhat.com>
+
+# This file is part of the rig project: https://github.com/TurboTurtle/rig
+#
+# This copyrighted material is made available to anyone wishing to use,
+# modify, copy, or redistribute it subject to the terms and conditions of
+# version 2 of the GNU General Public License.
+#
+# See the LICENSE file in the source distribution for further information.
+
+import argparse
+import os
+import sys
+
+from rigging import Rigging
+
+if __name__ == '__main__':
+
+    desc = ('Rig is used to monitor a resource for a specific trigger and then '
+           'execute a user-defined action.')
+    usage = '''
+    rig <resource or subcmd> <options>
+
+    <subcmd> may be one of the following:
+
+    list    -   Get a list of current rigs
+    destroy -   Destroy a specified rig
+
+    <resource> may be any of the following:
+    logs    -   Configure a rig to watch log file(s) and/or journal(s)
+    '''
+
+    # TODO: figure out how to dynamically build the usage message
+
+    epilog = '''
+    For more information on the types of rigs and the options available to them
+    use rig <resource> --help.
+    E.G. 'rig logs --help'
+    '''
+
+    parser = argparse.ArgumentParser(description=desc, usage=usage, epilog=epilog)
+    parser.add_argument('subcmd', help='resource or subcommand to execute')
+    parser.add_argument('-i', '--id', help='rig id for list or destroy', default='-1')
+    parser.add_argument('--force', help='force deletion of socket when destroying a rig fails', action='store_true')
+    args = vars(parser.parse_args(sys.argv[1:2]))
+
+
+    if os.getuid() == 0:
+        rig = Rigging(parser, args)
+        rig.execute()
+    else:
+        print("Rig must be run as the root user.")
+        sys.exit(1)

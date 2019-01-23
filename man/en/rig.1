@@ -1,0 +1,97 @@
+.TH rig 1 "January 2019"
+
+.SH NAME
+rig \- Monitor a system for events and trigger specific actions
+.SH USAGE
+.B rig <RESOURCE OR SUBCOMMAND> [OPTIONS] <ACTIONS> [ACTION OPTIONS]
+
+.PP
+.SH DESCRIPTION
+rig is a tool to assist in troubleshooting seemingly randomly occurring events
+or events that occur at times that make active monitoring by a sysadmin difficult.
+
+rig sets-up detached processes, known as 'rigs', that watch a given resource
+for a trigger condition, and once that trigger condition is met takes actions
+defined by the user.
+
+
+.SH SUBCOMMANDS
+
+.TP
+.B rig list
+Show a list of known existing rigs and their status. Status information is
+obtained by querying the socket created for that particular rig.
+
+.TP
+.B rig destroy \-i [ID or 'all']
+Destroy a deployed rig with id \fBID\fR. If \fBID\fR is 'all', destroy all known
+rigs. Note that if another entity kills the pid for the running rig, destroy will
+fail as the socket is no longer connected to the (now killed) process. In this case
+use the \fB--force\fR option to cleanup the lingering socket.
+
+
+.SH RESOURCES
+These are the system resources that rig can monitor. There may be additional
+manpages for specific resources. Where applicable this will be noted below.
+
+.TP
+.B logs
+Watch a single or multiple log files and/or journald units for a specified
+message. When that message is matched to any watched file or journal, the trigger
+condition is met and configured actions are initiated.
+
+The following options are available for the \fBlogs\fR rig:
+.RS 7
+.TP
+.B \-m|\-\-message STRING
+Define the string that serves as the trigger condition for the rig. This can be
+a regex string or an exact message. Be very careful in using the \fB'*'\fR regex
+character as this may cause unintended behavior such as the rig immediately
+triggering on the first message seen.
+
+.TP
+.B \-\-logfile FILE
+A comma-delimited list of files to watch. Each \fBFILE\fR specified will be
+monitored from the current end of the file, so old entries will not set off the
+rig's actions.
+
+Default: /var/log/messages
+.TP
+.B \-\-no-files
+Do not monitor any log files.
+.TP
+.B \-\-journal UNIT
+A comma-delimited list of journal units to watch. The journal is watched as a
+singular entity, and will be filtered to only read from the provided \fBUNIT(s)\fR.
+If no \fBUNIT\fR is specified, the whole system journal will be monitored.
+
+Default: 'system'
+.TP
+.B \-\-no-journal
+Do not monitor the journal.
+
+.RE
+.SH ACTIONS
+The following actions are supported responses to triggered rigs. These may be
+chained together on a single rig, so deploying multiple rigs with matching trigger
+conditions with single, varying actions is unnecessary.
+.TP
+.B sosreport
+Run a sosreport after the rig has been triggered. There is some customizability
+to the sosreport command that gets run via the \fB\-\-sos-opts\fR option described
+below.
+
+The \fBsosreport\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-sosreport
+Enables this action
+.TP
+.B \-\-sos-opts OPTIONS
+Specify the commandline options to use when running sosreport. Note that rig
+does not do any verification of the \fBOPTIONS\fR being passed to sosreport.
+.RE
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
