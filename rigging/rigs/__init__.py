@@ -415,10 +415,14 @@ class BaseRig():
         This is called when a rig's monitoring condition is met. This will then
         invoke any and all actions defined by the user.
         '''
-        for action in self._actions:
-            self.log_debug("Triggering action %s" % action)
-            self._actions[action]._trigger_action()
-            self._actions[action]._report_results()
+        try:
+            for action in sorted(self._actions,
+                                 key=lambda x: self._actions[x].priority):
+                self.log_debug("Triggering action %s" % action)
+                self._actions[action]._trigger_action()
+                self._actions[action]._report_results()
+        except Exception as err:
+            self.log_error("Error executing actions: %s" % err)
 
     def _cleanup(self):
         self._status = 'Exiting'

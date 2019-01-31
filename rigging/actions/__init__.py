@@ -28,6 +28,7 @@ class BaseAction():
     enabling_opt = ''
     enabling_opt_desc = ''
     action_name = ''
+    priority = 10
 
     def __init__(self, parser, rig_id):
         self.parser = parser
@@ -41,6 +42,7 @@ class BaseAction():
         self.args = args
         self.detached = True  # TODO: actually set this appropriately
         self.report_files = []
+        self.report_message = None
         self._setup_action_logging()
         self._pre_action()
 
@@ -192,6 +194,8 @@ class BaseAction():
         the action created and used add_report_files() with, as well as the
         add_report_message() string(s).
         '''
+        if not self.report_files and not self.report_message:
+            return
         msg = "Action %s" % self.action_name
         if self.report_files:
             msg += (" generated the following files: %s" %

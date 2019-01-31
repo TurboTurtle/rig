@@ -18,6 +18,7 @@ class SoSReport(BaseAction):
     action_name = 'sosreport'
     enabling_opt = 'sosreport'
     enabling_opt_desc = 'Generate a sosreport when triggered'
+    priority = 100
 
     def trigger_action(self):
         try:
