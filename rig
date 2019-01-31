@@ -17,8 +17,8 @@ from rigging import Rigging
 
 if __name__ == '__main__':
 
-    desc = ('Rig is used to monitor a resource for a specific trigger and then '
-           'execute a user-defined action.')
+    desc = ('Rig is used to monitor a resource for a specific trigger and then'
+            ' execute a user-defined action.')
     usage = '''
     rig <resource or subcmd> <options>
 
@@ -39,12 +39,14 @@ if __name__ == '__main__':
     E.G. 'rig logs --help'
     '''
 
-    parser = argparse.ArgumentParser(description=desc, usage=usage, epilog=epilog)
+    parser = argparse.ArgumentParser(description=desc, usage=usage,
+                                     epilog=epilog)
     parser.add_argument('subcmd', help='resource or subcommand to execute')
-    parser.add_argument('-i', '--id', help='rig id for list or destroy', default='-1')
-    parser.add_argument('--force', help='force deletion of socket when destroying a rig fails', action='store_true')
+    parser.add_argument('-i', '--id', help='rig id for list or destroy',
+                        default='-1')
+    parser.add_argument('--force', action='store_true',
+                        help='force deletion of requested rig(s)')
     args = vars(parser.parse_args(sys.argv[1:2]))
-
 
     if os.getuid() == 0:
         rig = Rigging(parser, args)
