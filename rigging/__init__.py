@@ -17,7 +17,7 @@ import sys
 import socket
 
 from logging.handlers import RotatingFileHandler
-from rigging.shared.exceptions import *
+from rigging.exceptions import *
 
 
 class Rigging():
@@ -117,7 +117,6 @@ class Rigging():
         self._load_supported_rigs()
         if self.args['subcmd'] in self._supported_rigs:
             rig = self._supported_rigs[self.args['subcmd']](self.parser)
-            print(rig)
             if rig._can_run:
                 return rig.execute()
         else:
