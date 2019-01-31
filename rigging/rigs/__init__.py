@@ -128,8 +128,8 @@ class BaseRig():
         destroying a deployed rig before the trigger event happens.
         '''
         _sock_path = '/var/run/rig/'
-        if not os.path(_sock_path):
-            os.makedir(_sock_path)
+        if not os.path.exists(_sock_path):
+            os.makedirs(_sock_path)
         _sock_address = "%s%s" % (_sock_path, self.id)
         try:
             os.unlink(_sock_address)
