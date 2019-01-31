@@ -21,7 +21,7 @@ class SoSReport(BaseAction):
 
     def trigger_action(self):
         try:
-            ret = self.exec_cmd('sosreport --batch -o kernel')
+            ret = self.exec_cmd('sosreport --batch')
         except Exception as err:
             self.log_debug(err)
         if ret['status'] == 0:
@@ -33,10 +33,6 @@ class SoSReport(BaseAction):
         else:
             self.log_error("Error during sosreport collection: %s" %
                            (ret['stderr'] or ret['stdout']))
-        return True
-
-    def report_results(self):
-        self.log_info('test action triggered!')
         return True
 
     def add_action_options(self, parser):
