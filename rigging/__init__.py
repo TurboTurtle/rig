@@ -10,13 +10,13 @@
 
 import argparse
 import ast
+import inspect
 import logging
 import os
 import sys
 import socket
 
 from logging.handlers import RotatingFileHandler
-from rigging.rigs.logs import Logs
 from rigging.shared.exceptions import *
 
 
@@ -55,6 +55,40 @@ class Rigging():
         self.console.setLevel(logging.DEBUG)
         self.console.addHandler(ui)
 
+    def _import_modules(self, modname):
+        '''
+        Import helper to import all classes from a rig definition.
+        '''
+        mod_short_name = modname.split('.')[2]
+        module = __import__(modname, globals(), locals(), [mod_short_name])
+        modules = inspect.getmembers(module, inspect.isclass)
+        for mod in modules:
+            if mod[0] in ('Rigging', 'BaseRig'):
+                modules.remove(mod)
+        return modules
+
+    def _load_supported_rigs(self):
+        '''
+        Discover locally available resource monitor types.
+
+        Monitors are added to a dict that is later iterated over to check if
+        the requested monitor is one that we have available to us.
+        '''
+        import rigging.rigs
+        monitors = rigging.rigs
+        self._supported_rigs = {}
+        modules = []
+        for path in monitors.__path__:
+            if os.path.isdir(path):
+                for pyfile in sorted(os.listdir(path)):
+                    if not pyfile.endswith('.py') or '__' in pyfile:
+                        continue
+                    fname, ext = os.path.splitext(pyfile)
+                    _mod = "rigging.rigs.%s" % fname
+                    modules.extend(self._import_modules(_mod))
+        for mod in modules:
+            self._supported_rigs[mod[0].lower()] = mod[1]
+
     def log_error(self, msg):
         self.console.error(msg)
 
@@ -74,16 +108,22 @@ class Rigging():
         '''
         if self.args['subcmd'] == 'list':
             self.list_rigs()
-            sys.exit(0)
+            return 0
         self._setup_logging()
         if self.args['subcmd'] == 'destroy':
             self.args = vars(self.parser.parse_args())
-            ret = self.destroy_rig(self.args['id'])
-            sys.exit(ret)
-        if self.args['subcmd'] == 'logs':
-            rig = Logs(self.parser)
+            return self.destroy_rig(self.args['id'])
+        # load known resource monitors
+        self._load_supported_rigs()
+        if self.args['subcmd'] in self._supported_rigs:
+            rig = self._supported_rigs[self.args['subcmd']](self.parser)
+            print(rig)
             if rig._can_run:
-                rig.execute()
+                return rig.execute()
+        else:
+            self.log_error("Unknown rig type %s provided" %
+                           self.args['subcmd'])
+            return 1
 
     def destroy_rig(self, rig_id):
         '''
