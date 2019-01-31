@@ -18,7 +18,7 @@ import sys
 
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
-from rigging.shared.exceptions import *
+from rigging.exceptions import *
 
 
 class BaseRig():
