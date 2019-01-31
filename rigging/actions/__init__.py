@@ -188,26 +188,19 @@ class BaseAction():
         '''
         This is called at the end of execution.
 
-        The action's report_results() must override the BaseAction method.
+        This will create a single log entry that includes any of the files
+        the action created and used add_report_files() with, as well as the
+        add_report_message() string(s).
         '''
-        self.log_info("Action %s generated the following files: %s"
-                      % (
-                            self.action_name,
-                            ','.join(f for f in self.report_files)
-                        ))
+        msg = "Action %s" % self.action_name
+        if self.report_files:
+            msg += (" generated the following files: %s" %
+                    ','.join(f for f in self.report_files))
+        if self.report_message:
+            msg += ("%s generated the following message: %s" %
+                    (' and' if self.report_files else '', self.report_message))
 
-    def report_results(self):
-        '''
-        MUST be overridden by a rig action subclassing BaseAction
-
-        This is where an action should report back to the user any information
-        that they should be made aware of - e.g. files created, process state,
-        etc...
-
-        Generally speaking, this should be calling (potentially multiple)
-        BaseAction.add_report_file() or BaseAction.add_report_message()
-        '''
-        raise NotImplementedError
+        self.log_info(msg)
 
     def add_report_file(self, filename):
         '''
