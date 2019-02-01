@@ -323,7 +323,9 @@ class BaseRig():
             _act = self.supported_actions[action]
             if action in self.args and self.args[_act.enabling_opt]:
                 _action = self.supported_actions[action]
-                _action.load(self.args)
+                loaded = _action.load(self.args)
+                if not loaded:
+                    self._exit(1)
                 self._actions[action] = _action
 
     def execute(self):
@@ -337,6 +339,8 @@ class BaseRig():
             if not self.get_option('foreground'):
                 print(self.id)
                 self._detach()
+                for action in self._actions:
+                    self._actions[action].detached = True
             # listen on the UDS socket in one thread, spin the watcher
             # off in a separate thread
             _threads = []
@@ -425,12 +429,15 @@ class BaseRig():
             self.log_error("Error executing actions: %s" % err)
 
     def _cleanup(self):
-        self._status = 'Exiting'
-        self.pool.shutdown(wait=False)
-        self.pool._threads.clear()
-        self._control_pool.shutdown(wait=False)
-        self._control_pool._threads.clear()
-        thread._threads_queues.clear()
+        try:
+            self._status = 'Exiting'
+            self.pool.shutdown(wait=False)
+            self.pool._threads.clear()
+            self._control_pool.shutdown(wait=False)
+            self._control_pool._threads.clear()
+            thread._threads_queues.clear()
+        except Exception:
+            pass
         try:
             os.remove(self._sock_address)
         except OSError as err:

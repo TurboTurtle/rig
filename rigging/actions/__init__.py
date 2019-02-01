@@ -40,11 +40,15 @@ class BaseAction():
         action.
         '''
         self.args = args
-        self.detached = True  # TODO: actually set this appropriately
+        self.detached = False
         self.report_files = []
         self.report_message = None
         self._setup_action_logging()
-        self._pre_action()
+        loaded = self._pre_action()
+        if not loaded:
+            self.log_debug("Failed to load action %s due to previous error"
+                           % self.action_name)
+        return loaded
 
     def _setup_action_logging(self):
         extra = {'rig_id': self.id}
@@ -104,8 +108,7 @@ class BaseAction():
                    pre_action is defined. Raises an exception if not successful
         '''
         try:
-            self.pre_action()
-            return True
+            return self.pre_action()
         except Exception as err:
             self.log_error("Could not execute pre-action for action %s: %s"
                            % (self.action_name, err))
@@ -122,7 +125,7 @@ class BaseAction():
         creation and uses a pre-action to do so. The trigger_action would then
         be stopping the packet capture.
         '''
-        pass
+        return True
 
     def _trigger_action(self):
         '''
