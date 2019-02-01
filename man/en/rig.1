@@ -34,6 +34,11 @@ use the \fB--force\fR option to cleanup the lingering socket.
 These are the system resources that rig can monitor. There may be additional
 manpages for specific resources. Where applicable this will be noted below.
 
+Note that 'resources', 'monitors', and referencing 'a rig' as a distinct entity
+all refer to the same thing.
+
+When creating a rig, if successful the rig's ID will be printed to console.
+
 .TP
 .B logs
 Watch a single or multiple log files and/or journald units for a specified
@@ -75,11 +80,47 @@ Do not monitor the journal.
 The following actions are supported responses to triggered rigs. These may be
 chained together on a single rig, so deploying multiple rigs with matching trigger
 conditions with single, varying actions is unnecessary.
+
+Actions are executed based on a priority weighting system, where lower values
+represent a higher priority action, and those actions with lower values are
+executed before those with higher values. This is to allow more time-sensitive
+actions to be taken before those that may either take a long time to execute or
+are otherwise unaffected by allowing other actions to run before them. Action
+priority values are set by the actions directly and are currently not able to
+be modified by users.
+.TP
+.B gcore
+Collect a coredump of a given process or processes using GDB's \fBgcore\fR utility.
+
+Note that this does _not_ interrupt the running process(es). Cores are saved to
+/tmp and will be named either core.$pid or core.$proc_name.$pid depending on if
+a PID or process name was provided. This action will be executed first when a rig
+is triggered and multiple actions are specified.
+
+The \fBgcore\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-gcore PROCESS
+Enables this action and takes either a PID or process name as a value. If a process
+name is given, the PID is determined at rig creation. If multiple PIDs are found
+for the same process name, the default behavior is to fail rig creation. Use the
+\fB\-\-all-pids\fR option to instead use all PIDs discovered for a process name.
+
+This option can be specified multiple times. E.G. \fB\-\-gcore 12345 \-\-gcore
+myprocess\fR will generate a coredump for PID 12345 and a process matching the
+name 'myprocess'.
+.TP
+.B \-\-all-pids
+Tells this action to collect a coredump for \fBall\fR PIDs found for a provided
+process name.
+.TP
+.RE
 .TP
 .B sosreport
 Run a sosreport after the rig has been triggered. There is some customizability
 to the sosreport command that gets run via the \fB\-\-sos-opts\fR option described
-below.
+below. This action should run after any time-sensitive actions otherwise specified
+by the user for a given rig.
 
 The \fBsosreport\fR action supports the following options:
 .RS 7
@@ -90,6 +131,21 @@ Enables this action
 .B \-\-sos-opts OPTIONS
 Specify the commandline options to use when running sosreport. Note that rig
 does not do any verification of the \fBOPTIONS\fR being passed to sosreport.
+.TP
+.RE
+
+.TP
+.B noop
+
+Does nothing - this action runs a no-op. This is ideally used for when you need
+to test a rig's configuration to make sure a rig's trigger condition is set
+properly - e.g. a regex string for the logs' rig message option.
+
+The \fBnoop\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-noop
+Enables this action
 .RE
 .SH MAINTAINER
 .nf
