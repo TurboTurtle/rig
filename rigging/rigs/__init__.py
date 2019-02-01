@@ -61,7 +61,7 @@ class BaseRig():
         self.supported_actions = self._load_supported_actions()
         for action in self.supported_actions:
             self.supported_actions[action].add_action_options(self.rig_parser)
-            self.parser_usage += '%s \t %s' % (
+            self.parser_usage += '\t{:<15} {:>30}\n'.format(
                 self.supported_actions[action].enabling_opt,
                 self.supported_actions[action].enabling_opt_desc
             )
