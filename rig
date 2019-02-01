@@ -50,8 +50,11 @@ if __name__ == '__main__':
 
     if os.getuid() == 0:
         rig = Rigging(parser, args)
-        ret = rig.execute()
-        sys.exit(ret)
+        try:
+            ret = rig.execute()
+            sys.exit(ret)
+        except SystemExit:
+            pass
     else:
         print("Rig must be run as the root user.")
         sys.exit(1)
