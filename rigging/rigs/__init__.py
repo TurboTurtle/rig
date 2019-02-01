@@ -419,6 +419,7 @@ class BaseRig():
         This is called when a rig's monitoring condition is met. This will then
         invoke any and all actions defined by the user.
         '''
+        self._status = 'Triggered'
         try:
             for action in sorted(self._actions,
                                  key=lambda x: self._actions[x].priority):
