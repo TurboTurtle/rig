@@ -381,11 +381,12 @@ class BaseRig():
         This will block until the rig has self.triggered become True.
         '''
         try:
-            self.start_watcher_threads()
-            self.log_info(
-                'Watcher thread triggered. Stopping other watcher threads ')
-            self.pool._threads.clear()
-            self.trigger_actions()
+            ret = self.start_watcher_threads()
+            if ret:
+                self.log_info(
+                    'Watcher thread triggered. Stopping other watcher threads')
+                self.pool._threads.clear()
+                self.trigger_actions()
         except Exception:
             raise
 
