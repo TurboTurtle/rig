@@ -26,7 +26,9 @@ class Logs(BaseRig):
         :opt logfile: The full path of the file(s) to watch. Defaults to
             /var/log/messages.
         :opt journal: The name of the journal unit to watch. Defaults to
-            the system journal. 'None' turns off watching the journal.
+            the system journal.
+        :opt no-files: Disable watching log files
+        :opt no-journal: Disable watching the journal
         :opt message: Trigger string (capable of shell-style regex) to
             watch logfile or journal for.
     '''
