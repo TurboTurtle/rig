@@ -14,6 +14,7 @@ import select
 import time
 
 from rigging.rigs import BaseRig
+from rigging.exceptions import CannotConfigureRigError
 from systemd import journal
 
 
@@ -78,8 +79,8 @@ class Logs(BaseRig):
                 if os.path.isfile(mfile):
                     watch_files.append(mfile)
                 else:
-                    self.log_error("%s is not a file. Aborting..." % mfile)
-                    self._exit(1)
+                    msg = "%s is not a file. Aborting..." % mfile
+                    raise CannotConfigureRigError(msg)
         if not self.get_option('no_journal'):
             _j = self.get_option('journal')
             self.add_watcher_thread(target=self.watch_journal, args=_j)
