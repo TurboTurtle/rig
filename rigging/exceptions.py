@@ -47,3 +47,12 @@ class SocketExistsError(Exception):
     def __init__(self, addr=''):
         message = "Socket %s already exists on filesystem" % addr
         super(SocketExistsError, self).__init__(message)
+
+
+class CannotConfigureRigError(Exception):
+    '''
+    Raised when a rig fails to set itself up properly.
+    '''
+    def __init__(self, msg=''):
+        message = "Rig setup failed: %s" % msg
+        super(CannotConfigureRigError, self).__init__(message)
