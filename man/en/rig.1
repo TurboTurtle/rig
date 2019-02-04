@@ -116,6 +116,32 @@ process name.
 .TP
 .RE
 .TP
+.B kdump
+Generate a vmcore by triggering a kernel crash via sysrq.
+
+Note that this action \fBWILL\fR cause node disruption by triggering a kernel panic
+to generate the vmcore. This means your system \fBwill reboot\fR when this action
+is triggered.
+
+The \fBkdump\fR action does not perform any configuration checks on the system's
+kdump installation. It is assumed that kdump has been properly configured and
+tested prior to using this action.
+
+The \fBkdump\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-kdump
+Enables this action
+
+.TP
+.B \-\-sysrq INTEGER
+When the rig is deployed, if this option is set, rig will set the system's
+\fB/proc/sys/kernel/sysrq\fR to the value provided. See sysrq kernel documentation
+for information on what values are supported.
+.TP
+.RE
+
+.TP
 .B sosreport
 Run a sosreport after the rig has been triggered. There is some customizability
 to the sosreport command that gets run via the \fB\-\-sos-opts\fR option described
