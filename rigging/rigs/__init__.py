@@ -403,6 +403,8 @@ class BaseRig():
         if not callable(target):
             raise Exception("Unable to add watcher thread. Target must be a "
                             "callable method, received %s" % target.__class__)
+        if not isinstance(args, tuple):
+            args = (args, )
         self.watcher_threads.add((target, args))
 
     def start_watcher_threads(self):
@@ -416,7 +418,7 @@ class BaseRig():
             futures = []
             self.pool = ThreadPoolExecutor()
             for wthread in self.watcher_threads:
-                futures.append(self.pool.submit(wthread[0], wthread[1]))
+                futures.append(self.pool.submit(wthread[0], *wthread[1]))
             results = wait(futures, return_when=FIRST_COMPLETED)
             result = list(results[0])[0].result()
             return result
