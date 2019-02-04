@@ -46,6 +46,7 @@ class BaseRig():
     watcher_threads = set()
 
     def __init__(self, parser):
+        self.detached = False
         self._status = 'Initializing'
         self.resource_name = self.__class__.__name__.lower()
         self.parser_usage = self.parser_usage % {'name': self.resource_name}
@@ -158,9 +159,13 @@ class BaseRig():
         as an element, it means we have an unknown arg.
         '''
         args = self.rig_parser.parse_known_args()
-        if len(args[1]) > 1:
+        filt = ['--debug', '--foreground']
+        self.debug = '--debug' in args[1]
+        self.foreground = '--foreground' in args[1]
+        unknowns = [x for x in args[1][1:] if x not in filt]
+        if len(unknowns):
             print("Unknown option %s specified." %
-                  args[1][1:][0].split('=')[0])
+                  unknowns[0].split('=')[0])
             return False
         self.args = vars(self.rig_parser.parse_known_args()[0])
         if self.args:
@@ -225,10 +230,6 @@ class BaseRig():
         return NotImplementedError
 
     @property
-    def detached(self):
-        return self.get_option('foreground') is False
-
-    @property
     def status(self):
         return {
             'id': self.id,
@@ -260,7 +261,7 @@ class BaseRig():
 
     def log_debug(self, msg):
         self.logger.debug(msg)
-        if not self.detached:
+        if not self.detached and self.debug:
             self.console.debug(msg)
 
     def get_option(self, option):
@@ -328,6 +329,14 @@ class BaseRig():
                     self._exit(1)
                 self._actions[action] = _action
 
+    def setup(self):
+        '''
+        MUST be overridden by rigs subclassing BaseRig.
+
+        This is where rigs will define their watcher threads.
+        '''
+        raise NotImplementedError
+
     def execute(self):
         '''
         Main entry point for rigs.
@@ -336,9 +345,10 @@ class BaseRig():
             self._register_actions()
             self.setup()
             # detach from console
-            if not self.get_option('foreground'):
+            if not self.foreground:
                 print(self.id)
                 self._detach()
+                self.detached = True
                 for action in self._actions:
                     self._actions[action].detached = True
             # listen on the UDS socket in one thread, spin the watcher
@@ -442,5 +452,8 @@ class BaseRig():
         try:
             os.remove(self._sock_address)
         except OSError as err:
-            self.log_error("Failed to remove listening socket %s: %s" %
-                           (self._sock_address, err))
+            if err.errno == 2:
+                pass
+            else:
+                self.log_error("Failed to remove listening socket %s: %s" %
+                               (self._sock_address, err))

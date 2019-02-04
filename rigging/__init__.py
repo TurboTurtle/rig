@@ -35,9 +35,13 @@ class Rigging():
     '''
 
     def __init__(self, parser, args):
+        # Add the common rigging options here
+        parser.add_argument('--foreground', action='store_true', default=False,
+                        help='Run the rig in the foreground')
+        parser.add_argument('--debug', action='store_true',
+                        help='Print debug messages to console')
         self.parser = parser
         self.args = args
-        # match supported rigs and load one by name.
 
     def _setup_logging(self):
         '''Setup logging to /var/log/rig/rig.log'''
