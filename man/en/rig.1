@@ -76,6 +76,75 @@ Default: 'system'
 Do not monitor the journal.
 
 .RE
+.TP
+.B process
+Watch a single process or list of processes for state changes or resource consumption
+thresholds. When the process enters the specified state or the specified resource
+consumption threshold is met, the trigger condition is met.
+
+The following options are available for the \fBprocess\fR rig:
+.RS 7
+.TP
+.B \-\-proc
+A PID or process name of processes to watch. If a process name is specified, then
+rig will attempt to convert this to a PID during rig creation. If multiple PIDs
+are found, the default behavior is to fail creation and exit. To have rig monitor
+all processes found for a process name, use the \fB\-\-all\fR option.
+.TP
+.B \-\-state STATE
+The state that a process needs to be in, in order to trigger the rig. The following
+is a list of supported states:
+
+    dead         The process is in a dead (X) state. Should never be seen.
+    disk-sleep   The process is in an uninterruptible sleep (D) state.
+    running      The process is in a running (R) state.
+    sleeping     The process is in an interruptible sleeping (S) state.
+    stopped      The process is in a stopped (T) state.
+    zombie       The process is a zombie or in Z state.
+
+This can also be set to a "not" value by preceeding one of the above state strings
+with a exclaimation mark (!), e.g. '!sleeping' will match any non-sleep (S) state
+status for the process(es). Most shells will require you to quote the state string
+when using the '!' character.
+
+Note that using '!running' will cause rig to not \fBnot\fR trigger against a state
+of 'sleeping', as generally speaking 'running' processes spend much of their time
+in S state, and it is assumed that triggering against such a process is not desired. 
+.TP
+.B \-\-rss INTEGER
+The amount of rss (resident set size) memory usage to use as a threshold for triggering
+the rig. If the process' RSS usage goes above this value, trigger.
+
+The value provided here may be suffixed with K, M, or G to denote the IEC unit.
+Rig will convert the provided value and suffix into a value in bytes.
+.TP
+.B \-\-vms INTEGER
+The same as \fB\-\-rss\fR but monitoring Virtual Memory Size instead.
+.TP
+.B \-\-memperc PERCENT
+The percentage of total system memory a process is consuming to use as a threshold
+for triggering the rig. If the process' %mem \fBmeets or exceeds\fR this value,
+trigger.
+
+\fBPERCENT\fR may be a whole integer or a float. When using a float, the process rig
+respects up to \fBtwo (2)\fR decimal points of precision. For example, using
+\'\fB\-\-memperc 10.25\fR\' is the same as using \'\fB\-\-memperc 10.25678\fR\'.
+.TP
+.B \-\-cpuperc PERCENT
+The percentage of CPU usage a process is consuming to use as a threshold for
+triggering the rig. If the process' %cpu \fBmeets or exceeds\fR this value,
+trigger.
+
+\fBPERCENT\fR may be a whole integer or a float. When using a float and monitoring
+for CPU usage, rig respects \fBone (1)\fR decimal point of precision due to how CPU
+usage is reported.
+
+\fBPERCENT\fR may be above 100 - as CPU usage can exceed 100 when a process is
+running on multiple CPUs.
+
+
+.RE
+
 .SH ACTIONS
 The following actions are supported responses to triggered rigs. These may be
 chained together on a single rig, so deploying multiple rigs with matching trigger
