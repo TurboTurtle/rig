@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='rig',
-    version='0.0.1',
+    version='0.0.2',
     description='Monitor a system for events and trigger specific actions',
     long_description=("Rig is a utility designed to watch or monitor specific "
                       "system resources (e.g. log files, journals, network "
@@ -22,4 +22,7 @@ setup(
                 ],
     packages=find_packages(),
     scripts=['rig'],
-    data_files=[('share/licenses/rig', ['LICENSE'])])
+    data_files=[
+        ('share/licenses/rig', ['LICENSE']),
+        ('share/man/man1/', ['man/en/rig.1'])
+    ])

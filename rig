@@ -28,7 +28,8 @@ if __name__ == '__main__':
     destroy -   Destroy a specified rig
 
     <resource> may be any of the following:
-    logs    -   Configure a rig to watch log file(s) and/or journal(s)
+    logs    -   Watch log file(s) and/or journal(s) for a message
+    process -   Monitor a process for resource usage or state changes
     '''
 
     # TODO: figure out how to dynamically build the usage message
