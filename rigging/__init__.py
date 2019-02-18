@@ -56,7 +56,7 @@ class Rigging():
         self.console = logging.getLogger('rig_console')
         ui = logging.StreamHandler()
         ui.setFormatter(logging.Formatter('%(message)s'))
-        self.console.setLevel(logging.DEBUG)
+        self.console.setLevel(logging.WARN)
         self.console.addHandler(ui)
 
     def _import_modules(self, modname):
