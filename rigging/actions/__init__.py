@@ -46,8 +46,9 @@ class BaseAction():
         self._setup_action_logging()
         loaded = self._pre_action()
         if not loaded:
-            self.log_debug("Failed to load action %s due to previous error"
+            self.log_error("Failed to load action %s"
                            % self.action_name)
+            self.cleanup()
         return loaded
 
     def _setup_action_logging(self):
@@ -112,7 +113,7 @@ class BaseAction():
         except Exception as err:
             self.log_error("Could not execute pre-action for action %s: %s"
                            % (self.action_name, err))
-            raise
+            return False
 
     def pre_action(self):
         '''
@@ -234,3 +235,15 @@ class BaseAction():
         if not isinstance(message, str):
             raise TypeError('message must be of type str')
         self.report_message = message
+
+    def cleanup(self):
+        '''
+        Used on select actions that may have bits that need to be cleanup up
+        in the event that a rig fails to start, but are not automatically
+        handled by the system.
+
+        For example, with the tcpdump action there is a possiblity we could
+        fail to start the rig, but still have a detached thread running the
+        tcpdump command that we would want to kill
+        '''
+        pass

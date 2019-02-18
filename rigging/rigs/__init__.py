@@ -445,6 +445,8 @@ class BaseRig():
     def _cleanup(self):
         try:
             self._status = 'Exiting'
+            for action in self._actions:
+                self._actions[action].cleanup()
             self.pool.shutdown(wait=False)
             self.pool._threads.clear()
             self._control_pool.shutdown(wait=False)
