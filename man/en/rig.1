@@ -107,7 +107,7 @@ with a exclaimation mark (!), e.g. '!sleeping' will match any non-sleep (S) stat
 status for the process(es). Most shells will require you to quote the state string
 when using the '!' character.
 
-Note that using '!running' will cause rig to not \fBnot\fR trigger against a state
+Note that using '!running' will cause rig to \fBnot\fR trigger against a state
 of 'sleeping', as generally speaking 'running' processes spend much of their time
 in S state, and it is assumed that triggering against such a process is not desired. 
 .TP
@@ -228,7 +228,55 @@ Specify the commandline options to use when running sosreport. Note that rig
 does not do any verification of the \fBOPTIONS\fR being passed to sosreport.
 .TP
 .RE
+.TP
+.B tcpdump
+Start collecting a tcpdump when the rig is initialized, and stop the collection
+when the rig triggers. This action will be triggered before most other actions,
+but after the gcore action.
 
+Note there will be a slight delay in configuring any rig that uses the tcpdump
+action as rig must verify that the tcpdump process started successfully during
+the initialization process.
+
+The \fBtcpdump\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-tcpdump
+Enables this action
+.TP
+.B \-\-iface INTERFACE
+Starts the tcpdump to monitor the provided INTERFACE. In almost all situations
+this should likely be set to a specific interface on the system, however the
+value of 'any' is accepted by the tcpdump command in order to listen on all
+interfaces. Be wary of using this however as use of 'any' means will make it
+impossible to determine which interface a particular packet came in on in the
+resulting packet capture.
+
+Default: eth0
+.TP
+.B \-\-filter FILTER
+Provide a filter to use with tcpdump in order to reduce the amount of traffic
+recorded in the packet capture. This value is passed directly to the tcpdump
+utility, and thus can be any valid filter accepted by tcpdump.
+
+\fBFor most shells you must quote the filter string for rig to pass it correctly.\fR
+.TP
+.B \-\-size SIZE
+Limit the size of the packet capture file(s) to SIZE in MB.
+
+Default: 10
+.TP
+.B \-\-count COUNT
+Specify the number of packet capture files to keep. If more than one (1), then
+tcpdump will rotate the packet capture file when it reaches the \fB\-\-size\fR
+value and keep COUNT number of files.
+
+E.G. Using a COUNT of 2 and a SIZE of 5, then when the rig terminates you will
+have up to 2 5MB packet captures.
+
+Default: 1 (packet capture file is replaced upon reaching SIZE limit).
+.TP
+.RE
 .TP
 .B noop
 
