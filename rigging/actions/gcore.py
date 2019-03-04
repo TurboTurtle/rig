@@ -20,6 +20,7 @@ class Gcore(BaseAction):
     enabling_opt = 'gcore'
     enabling_opt_desc = 'Capture a coredump of a running process'
     priority = 1
+    required_binaries = ('gcore',)
 
     def add_action_options(self, parser):
         parser.add_argument('--gcore', action='append',

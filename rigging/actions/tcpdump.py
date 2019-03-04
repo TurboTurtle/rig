@@ -30,6 +30,7 @@ class Tcpdump(BaseAction):
     enabling_opt = 'tcpdump'
     enabling_opt_desc = 'Start a tcpdump that ends when rig is triggered'
     priority = 2
+    required_binaries = ('tcpdump',)
 
     def add_action_options(self, parser):
         parser.add_argument('--tcpdump', action='store_true',

@@ -9,6 +9,7 @@
 # See the LICENSE file in the source distribution for further information.
 
 import logging
+import os
 import shlex
 
 from subprocess import Popen, PIPE
@@ -29,6 +30,7 @@ class BaseAction():
     enabling_opt_desc = ''
     action_name = ''
     priority = 10
+    required_binaries = ()
 
     def __init__(self, parser, rig_id):
         self.parser = parser
@@ -99,6 +101,14 @@ class BaseAction():
         '''
         return parser
 
+    def _check_exists(self, binary):
+        '''
+        Checks to see if the given binary exists in PATH.
+        '''
+        paths = os.environ.get("PATH", "").split(os.path.pathsep)
+        cmds = [os.path.join(p, binary) for p in paths]
+        return any(os.access(path, os.X_OK) for path in cmds)
+
     def _pre_action(self):
         '''
         This is called prior to setting up a resource monitor, and wraps an
@@ -109,6 +119,10 @@ class BaseAction():
                    pre_action is defined. Raises an exception if not successful
         '''
         try:
+            for binary in self.required_binaries:
+                if not self._check_exists(binary):
+                    self.log_error("Required binary %s not found" % binary)
+                    return False
             return self.pre_action()
         except Exception as err:
             self.log_error("Could not execute pre-action for action %s: %s"
