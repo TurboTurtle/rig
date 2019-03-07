@@ -23,7 +23,8 @@ class SoSReport(BaseAction):
 
     def trigger_action(self):
         try:
-            ret = self.exec_cmd('sosreport --batch')
+            ret = self.exec_cmd("sosreport --batch --tmp-dir=%s "
+                                % self.tmp_dir)
         except Exception as err:
             self.log_debug(err)
         if ret['status'] == 0:

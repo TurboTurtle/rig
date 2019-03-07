@@ -62,7 +62,7 @@ class Gcore(BaseAction):
 
     def trigger_action(self):
         for pid in self.pid_list:
-            loc = '/tmp/core'
+            loc = self.tmp_dir + 'core'
             if pid[1]:
                 loc += ".%s" % pid[1]
             self.log_debug("Collecting gcore of %s at %s" % (pid[0], loc))

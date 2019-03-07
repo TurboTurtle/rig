@@ -53,7 +53,7 @@ class Tcpdump(BaseAction):
         name = "%s-%s-%s" % (self.exec_cmd('hostname')['stdout'].strip(),
                              _date,
                              self.args['iface'])
-        self.loc = "/tmp/%s.pcap" % name
+        self.loc = "%s%s.pcap" % (self.tmp_dir, name)
         cmd = ("%s %s -i %s -C %s -W %s "
                % (TCPDUMP_BIN, TCPDUMP_OPTS, self.args['iface'],
                   self.args['size'], self.args['count'])

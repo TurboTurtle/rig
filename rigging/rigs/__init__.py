@@ -20,6 +20,9 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from rigging.exceptions import *
 
+RIG_DIR = '/var/run/rig/'
+RIG_TMP_DIR = '/var/tmp/rig/'
+
 
 class BaseRig():
     '''
@@ -76,6 +79,7 @@ class BaseRig():
         if self._can_run:
             self._setup_rig_logging()
             self._sock, self._sock_address = self._create_rig_socket()
+            self._tmp_dir = self._create_temp_dir()
 
     def _exit(self, errno):
         '''
@@ -128,10 +132,9 @@ class BaseRig():
         This socket is used by the rig cli when getting status information or
         destroying a deployed rig before the trigger event happens.
         '''
-        _sock_path = '/var/run/rig/'
-        if not os.path.exists(_sock_path):
-            os.makedirs(_sock_path)
-        _sock_address = "%s%s" % (_sock_path, self.id)
+        if not os.path.exists(RIG_DIR):
+            os.makedirs(RIG_DIR)
+        _sock_address = "%s%s" % (RIG_DIR, self.id)
         try:
             os.unlink(_sock_address)
         except OSError:
@@ -145,6 +148,17 @@ class BaseRig():
         except Exception as err:
             self.log_error("Unable to create unix socket: %s" % err)
             raise CreateSocketException
+
+    def _create_temp_dir(self):
+        '''
+        Create a temp directory for rig to use for saving created files too
+        '''
+        try:
+            _dir = RIG_TMP_DIR + self.id + '/'
+            os.makedirs(_dir)
+            return _dir
+        except OSError:
+            raise CannotConfigureRigError('failed to create temp directory')
 
     def _load_args(self):
         '''
@@ -327,6 +341,7 @@ class BaseRig():
                 loaded = _action.load(self.args)
                 if not loaded:
                     self._exit(1)
+                _action.set_tmp_dir(self._tmp_dir)
                 self._actions[action] = _action
 
     def setup(self):
@@ -359,6 +374,7 @@ class BaseRig():
             _threads.append(self._control_pool.submit(self._monitor_resource))
             self._status = 'Running'
             ret = wait(_threads, return_when=FIRST_COMPLETED)
+            self.report_created_files()
             self._cleanup()
             if ret:
                 os._exit(0)
@@ -389,6 +405,13 @@ class BaseRig():
                 self.trigger_actions()
         except Exception:
             raise
+
+    def report_created_files(self):
+        '''
+        Report all files created by all actions
+        '''
+        self.log_info("The following files were created for this rig: %s"
+                      % ', '.join(f for f in self.files))
 
     def add_watcher_thread(self, target, args):
         '''
@@ -433,12 +456,13 @@ class BaseRig():
         invoke any and all actions defined by the user.
         '''
         self._status = 'Triggered'
+        self.files = []
         try:
             for action in sorted(self._actions,
                                  key=lambda x: self._actions[x].priority):
                 self.log_debug("Triggering action %s" % action)
                 self._actions[action]._trigger_action()
-                self._actions[action]._report_results()
+                self.files.extend(self._actions[action].finish_execution())
         except Exception as err:
             self.log_error("Error executing actions: %s" % err)
 

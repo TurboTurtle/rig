@@ -11,7 +11,9 @@
 import logging
 import os
 import shlex
+import shutil
 
+from rigging.exceptions import *
 from subprocess import Popen, PIPE
 
 
@@ -35,6 +37,12 @@ class BaseAction():
     def __init__(self, parser, rig_id):
         self.parser = parser
         self.id = rig_id
+
+    def set_tmp_dir(self, tmp_dir):
+        if os.path.exists(tmp_dir):
+            self.tmp_dir = tmp_dir
+        else:
+            raise CannotConfigureRigError("%s does not exist" % tmp_dir)
 
     def load(self, args):
         '''
@@ -204,6 +212,15 @@ class BaseAction():
         '''
         pass
 
+    def finish_execution(self):
+        '''
+        Called when an aciton has completed it's trigger, and we need to
+        perform closing operations to cleanly exit the action.
+        '''
+        self._report_results()
+        return self.report_files
+        # TODO: consider tar'ing up the tmp directory
+
     def _report_results(self):
         '''
         This is called at the end of execution.
@@ -216,13 +233,11 @@ class BaseAction():
             return
         msg = "Action %s" % self.action_name
         if self.report_files:
-            msg += (" generated the following files: %s" %
-                    ','.join(f for f in self.report_files))
+            self.log_debug(msg + " generated the following files: %s" %
+                           ','.join(f for f in self.report_files))
         if self.report_message:
-            msg += ("%s generated the following message: %s" %
-                    (' and' if self.report_files else '', self.report_message))
-
-        self.log_info(msg)
+            self.log_info(msg + " generated the following message: %s" %
+                          (self.report_message))
 
     def add_report_file(self, filename):
         '''
@@ -234,6 +249,13 @@ class BaseAction():
         '''
         if not isinstance(filename, list):
             filename = [filename]
+        for fname in filename:
+            if not fname.startswith(self.tmp_dir):
+                try:
+                    shutil.move(fname, self.tmp_dir)
+                except OSError:
+                    self.log_error("Could not move %s to rig tmp dir %s"
+                                   % (fname, self.tmp_dir))
         self.report_files.extend(filename)
 
     def add_report_message(self, message):
