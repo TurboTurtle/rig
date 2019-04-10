@@ -46,7 +46,7 @@ class BaseRig():
 
     '''
     triggered = False
-    watcher_threads = set()
+    watcher_threads = []
 
     def __init__(self, parser):
         self.detached = False
@@ -429,7 +429,7 @@ class BaseRig():
                             "callable method, received %s" % target.__class__)
         if not isinstance(args, tuple):
             args = (args, )
-        self.watcher_threads.add((target, args))
+        self.watcher_threads.append((target, args))
 
     def start_watcher_threads(self):
         '''

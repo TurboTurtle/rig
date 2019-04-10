@@ -142,7 +142,80 @@ usage is reported.
 \fBPERCENT\fR may be above 100 - as CPU usage can exceed 100 when a process is
 running on multiple CPUs.
 
+.RE
+.TP
+.B system
 
+Watch the system's utilization of resources as a whole, e.g. total CPU or memory
+usage. When the utilization of a given resource is either exceeded or falls below
+the given threshold (determined as appropriate for each resource), the trigger
+condition is met.
+
+The following options are available for the \fBsystem\fR rig:
+.RS 7
+.TP
+.B \-\-iowait PERCENT
+The amount of %iowait as reported by the kernel to use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+.TP
+.B \-\-steal PERCENT
+The amount of %steal as reported by the kernel to use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+.TP
+.B \-\-nice PERCENT
+The amount of %nice as reported by the kernel to use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+.TP
+.B \-\-guest PERCENT
+The amount of %guest as reported by the kernel to use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+.TP
+.B \-\-user
+The amount of %user as reported by the kernel to use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+.TP
+.B \-\-available INTEGER
+The amount of available memory in MiB as reported by the kernel to use as a threshold value.
+
+If the amount of available memory \fBfalls below\fR this threshold, trigger the rig.
+.TP
+.B \-\-free INTEGER
+The amount of free memory in MiB as reported by the kernel to use as a threshold value.
+
+If the amount of free memory \fBfalls below\fR this threshold, trigger the rig.
+.TP
+.B \-\-used INTEGER
+The amount of used memory in MiB as reported by the kernel to use as a threshold value.
+
+If the amount of used memory \fBexceeds\fR this threshold, trigger the rig.
+.TP
+.B \-\-slab INTEGER
+The amount of slab memory in MiB as reported by the kernel to use as a threshold value.
+
+If the amount of slab memory \fBexceeds\fR this threshold, trigger the rig.
+.TP
+.B \-\-cpuperc PERCENT
+The amount of \fBtotal\fR CPU usage as reported by the kernel as a percentage to
+use as a threshold value.
+
+If \fBexceeded\fR, trigger the rig.
+
+This value may be a whole integer or a float. Floats are precise out to one (1)
+decimal point.
+.TP
+.B \-\-memperc PERCENT
+The amount of \fBtotal\fR memory usage as reported by the kernel as a percentage
+to use as a theshold value.
+
+If \fBexceeded\fR, trigger the rig.
+
+This value may be a whole integer or a float. Floats are precise out to one (1)
+decimal point.
 .RE
 
 .SH ACTIONS
