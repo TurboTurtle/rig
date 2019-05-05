@@ -30,6 +30,7 @@ if __name__ == '__main__':
     <resource> may be any of the following:
     logs    -   Watch log file(s) and/or journal(s) for a message
     process -   Monitor a process for resource usage or state changes
+    system  -   Monitor whole system resource usage metrics
     '''
 
     # TODO: figure out how to dynamically build the usage message
