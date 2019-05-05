@@ -12,6 +12,8 @@ import fnmatch
 
 from rigging.actions import BaseAction
 
+SOS_BIN = '/usr/sbin/sosreport --batch'
+
 
 class SoSReport(BaseAction):
 
@@ -23,8 +25,10 @@ class SoSReport(BaseAction):
 
     def trigger_action(self):
         try:
-            ret = self.exec_cmd("sosreport --batch --tmp-dir=%s "
-                                % self.tmp_dir)
+            cmd = "%s --tmp-dir=%s" % (SOS_BIN, self.tmp_dir)
+            if self.args['sos_opts']:
+                cmd += " %s" % self.args['sos_opts']
+            ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
         if ret['status'] == 0:
@@ -32,6 +36,8 @@ class SoSReport(BaseAction):
             for line in ret['stdout'].splitlines():
                 if fnmatch.fnmatch(line, '*sosreport-*tar*'):
                     path = line.strip()
+            if path == 'unknown':
+                self.log_debug(ret['stdout'])
             self.add_report_file(path)
         else:
             self.log_error("Error during sosreport collection: %s" %
