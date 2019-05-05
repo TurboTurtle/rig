@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
+from rigging import __version__ as VERSION
 
 setup(
     name='rig',
-    version='0.0.2',
+    version=VERSION,
     description='Monitor a system for events and trigger specific actions',
     long_description=("Rig is a utility designed to watch or monitor specific "
                       "system resources (e.g. log files, journals, network "
