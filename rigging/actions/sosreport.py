@@ -37,7 +37,9 @@ class SoSReport(BaseAction):
                 if fnmatch.fnmatch(line, '*sosreport-*tar*'):
                     path = line.strip()
             if path == 'unknown':
+                self.log_error('Could not determine path for sosreport')
                 self.log_debug(ret['stdout'])
+                return False
             self.add_report_file(path)
         else:
             self.log_error("Error during sosreport collection: %s" %
