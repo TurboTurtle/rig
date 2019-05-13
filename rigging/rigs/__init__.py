@@ -8,7 +8,9 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
+import ast
 import inspect
+import json
 import logging
 import os
 import random
@@ -80,6 +82,7 @@ class BaseRig():
             self._setup_rig_logging()
             self._sock, self._sock_address = self._create_rig_socket()
             self._tmp_dir = self._create_temp_dir()
+            self.files = []
 
     def _exit(self, errno):
         '''
@@ -244,7 +247,12 @@ class BaseRig():
         return NotImplementedError
 
     @property
-    def status(self):
+    def status(self, value=None):
+        '''
+        Returns the current status of the rig.
+
+        :param value: Unused, but passed by the listening socket
+        '''
         return {
             'id': self.id,
             'pid': str(self.pid),
@@ -305,24 +313,46 @@ class BaseRig():
         '''
         return parser
 
+    def _fmt_return(self, command, output='', success=True):
+        '''
+        Formats a return value as a dict specifying the id of this rig, the
+        command run, any output, and if the command was successful
+        '''
+        return json.dumps({
+            'id': self.id,
+            'command': command,
+            'result': output,
+            'success': success
+        }).encode()
+
     def _listen_on_socket(self):
         self.log_debug('Listening on %s' % self._sock_address)
         while True:
             conn, client = self._sock.accept()
-            req = conn.recv(1024).decode()
-            self.log_debug("Received request '%s' from socket" % req)
-            if req == 'destroy':
-                self.log_debug("Shutting down rig")
-                conn.sendall(self.id.encode())
-                return True
             try:
-                ret = str(getattr(self, req))
+                req = json.loads(conn.recv(1024).decode())
+            except Exception as err:
+                self.log_debug("Error parsing socket request: %s" % err)
+                return self._fmt_return(command="Unknown", result=err,
+                                        success=False)
+            self.log_debug("Received request '%s' from socket"
+                           % req['command'])
+            if req['command'] == 'destroy':
+                self.log_debug("Shutting down rig")
+                ret = self._fmt_return(command='destroy')
+                conn.sendall(ret)
+                raise DestroyRig
+            try:
+                ret = str(getattr(self, req['command'], extra=req['extra']))
                 self.log_debug("Sending '%s' back to client" % ret)
-                conn.sendall(ret.encode())
+                conn.sendall(self._fmt_return(command=req['command'],
+                                              output=ret))
             except Exception as err:
                 self.log_debug(err)
-                self.log_error('No attribute: %s' % req)
-                conn.sendall('unknown'.encode())
+                self.log_error('No attribute: %s' % req['command'])
+                conn.sendall(self._fmt_return(command=req['command'],
+                                              output='No such attribute',
+                                              success=False))
             continue
 
     def _register_actions(self):
@@ -410,8 +440,9 @@ class BaseRig():
         '''
         Report all files created by all actions
         '''
-        self.log_info("The following files were created for this rig: %s"
-                      % ', '.join(f for f in self.files))
+        if self.files:
+            self.log_info("The following files were created for this rig: %s"
+                          % ', '.join(f for f in self.files))
 
     def add_watcher_thread(self, target, args):
         '''

@@ -11,6 +11,7 @@
 import argparse
 import ast
 import inspect
+import json
 import logging
 import os
 import sys
@@ -58,7 +59,7 @@ class Rigging():
         self.console = logging.getLogger('rig_console')
         ui = logging.StreamHandler()
         ui.setFormatter(logging.Formatter('%(message)s'))
-        self.console.setLevel(logging.WARN)
+        self.console.setLevel(logging.INFO)
         self.console.addHandler(ui)
 
     def _import_modules(self, modname):
@@ -153,9 +154,10 @@ class Rigging():
                 if rig in existing_rigs:
                     _rig = RigConnection(rig)
                     ret = _rig.destroy()
-                    if ret == rig:
-                        self.log_info("%s destroyed" % ret)
+                    if ret['success'] and ret['id'] == rig:
+                        self.log_info("%s destroyed" % ret['id'])
                     else:
+                        print('!!!')
                         self.log_error(ret)
 
                 else:
@@ -222,13 +224,32 @@ class RigConnection():
         except OSError:
             raise MissingSocketError(_address)
 
-    def _rig_communicate(self, element):
+    def _rig_communicate(self, command, extra=None):
+        '''
+        Facilitates communicating with the rig over the socket the rig is
+        listening on.
+
+        Messages are sent as json, and at current support the following
+        elements:
+            command:    the command/function that the rig should run/return
+            extra:      Optional, any value that should be passed to the
+                        function specified by command
+
+        Returns:
+            A dict with the rig's ID, the command that was run, a 'success'
+            boolean that indicates if the command was run successfully or not,
+            and the resulting output from the command.
+        '''
+        cmd = json.dumps({
+            'command': command,
+            'extra': value
+        })
         self.sock.settimeout(2)
-        self.sock.sendall(element.encode())
+        self.sock.sendall(cmd.encode())
         try:
-            data = self.sock.recv(1024).decode()
+            data = self.sock.recv(1024)
         except Exception as err:
-            return 'Unknown'
+            return {'id': None, 'command': 'Unknown', 'success': False}
         return data
 
     def status(self):
@@ -238,7 +259,10 @@ class RigConnection():
         Returns
             dict of rig's status information
         '''
-        return ast.literal_eval(self._rig_communicate('status'))
+        ret = json.loads(self._rig_communicate('status').decode())
+        if ret['success']:
+            return ast.literal_eval(ret['result'])
+        raise Exception
 
     def destroy(self):
         '''
@@ -247,7 +271,7 @@ class RigConnection():
         Returns
             str matching the rig ID
         '''
-        return self._rig_communicate('destroy')
+        return json.loads(self._rig_communicate('destroy').decode())
 
 
 class RigRotatingFileHandler(RotatingFileHandler):

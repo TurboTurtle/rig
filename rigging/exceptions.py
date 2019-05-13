@@ -53,6 +53,14 @@ class CannotConfigureRigError(Exception):
     '''
     Raised when a rig fails to set itself up properly.
     '''
+
     def __init__(self, msg=''):
         message = "Rig setup failed: %s" % msg
         super(CannotConfigureRigError, self).__init__(message)
+
+
+class DestroyRig(Exception):
+    '''
+    Raised when we intentionally destroy a rig, so we can trap the exit of the
+    thread pool
+    '''
