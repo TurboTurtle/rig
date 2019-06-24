@@ -20,7 +20,7 @@ import socket
 from logging.handlers import RotatingFileHandler
 from rigging.exceptions import *
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 
 class Rigging():
