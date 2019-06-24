@@ -31,6 +31,7 @@ class SoSReport(BaseAction):
             ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
+            return False
         if ret['status'] == 0:
             path = 'unknown'
             for line in ret['stdout'].splitlines():
