@@ -224,7 +224,7 @@ class RigConnection():
         except OSError:
             raise MissingSocketError(_address)
 
-    def _rig_communicate(self, command, extra=None):
+    def _rig_communicate(self, command, extra=''):
         '''
         Facilitates communicating with the rig over the socket the rig is
         listening on.
@@ -242,7 +242,7 @@ class RigConnection():
         '''
         cmd = json.dumps({
             'command': command,
-            'extra': value
+            'extra': extra
         })
         self.sock.settimeout(2)
         self.sock.sendall(cmd.encode())

@@ -343,7 +343,7 @@ class BaseRig():
                 conn.sendall(ret)
                 raise DestroyRig
             try:
-                ret = str(getattr(self, req['command'], extra=req['extra']))
+                ret = str(getattr(self, req['command']))
                 self.log_debug("Sending '%s' back to client" % ret)
                 conn.sendall(self._fmt_return(command=req['command'],
                                               output=ret))
