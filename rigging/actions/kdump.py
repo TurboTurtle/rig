@@ -39,14 +39,18 @@ class Kdump(BaseAction):
                 self.log_error('Setting /proc/sys/kernel/sysrq to 0 will '
                                'disable kdump, cannot continue.')
                 return False
-            ret = self.exec_cmd("echo %s > /proc/sys/kernel/sysrq" % sysrq)
-            if not ret['status'] == 0:
-                self.log_error("Failed to set /proc/sys/kernel/sysrq: %s"
-                               % ret['stdout'])
+            self.log_info("Setting /proc/sys/kernel/sysrq to %s" % sysrq)
+            with open('/proc/sys/kernel/sysrq', 'w') as kern_sysrq:
+                try:
+                    kern_sysrq.write(sysrq)
+                except Exception as err:
+                    self.log_error("Failed to set /proc/sys/kernel/sysrq: %s"
+                               % err)
                 return False
         return True
 
     def trigger_action(self):
-        self.log_info('Echoing \'c\' to /proc/sysrq-trigger - look in your '
+        self.log_info('Writing \'c\' to /proc/sysrq-trigger - look in your '
                       'configured crash location for a vmcore after reboot')
-        self.exec_cmd('echo c > /proc/sysrq-trigger')
+        with open('/proc/sysrq-trigger', 'w') as sysrq:
+            sysrq.write('c')
