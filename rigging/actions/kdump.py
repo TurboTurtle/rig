@@ -33,7 +33,7 @@ class Kdump(BaseAction):
         return parser
 
     def pre_action(self):
-        sysrq = self.args['sysrq']
+        sysrq = self.get_option('sysrq')
         if sysrq is not None:
             if sysrq == 0:
                 self.log_error('Setting /proc/sys/kernel/sysrq to 0 will '
@@ -45,7 +45,7 @@ class Kdump(BaseAction):
                     kern_sysrq.write(sysrq)
                 except Exception as err:
                     self.log_error("Failed to set /proc/sys/kernel/sysrq: %s"
-                               % err)
+                                   % err)
                 return False
         return True
 
