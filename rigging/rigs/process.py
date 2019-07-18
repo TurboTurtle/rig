@@ -37,11 +37,12 @@ class Process(BaseRig):
 
     parser_description = ('Monitor a process for state or resource consumption'
                           ' thresholds.')
+    rig_wide_opts = ('process', 'all')
 
     def set_parser_options(self, subparser):
-        subparser.add_argument('--proc', action='append',
+        subparser.add_argument('-p', '--process', action='append',
                                help='PID or name of process to watch')
-        subparser.add_argument('--all', action='store_true',
+        subparser.add_argument('--all', action='store_true', default=False,
                                help='Watch all PIDs for a process name')
         subparser.add_argument('--state',
                                help='What process status to trigger on')
@@ -64,16 +65,16 @@ class Process(BaseRig):
     @property
     def trigger(self):
         triggers = ''
-        if self.args['state']:
-            triggers += 'State: %s ' % self.args['state']
-        if self.args['rss']:
-            triggers += "RSS usage above %s " % self.args['rss']
-        if self.args['vms']:
-            triggers += "VMS usage above %s " % self.args['vms']
-        if self.args['memperc']:
-            triggers += "%Mem usage above %s%% " % self.args['memperc']
-        if self.args['cpuperc']:
-            triggers += "%CPU usage above %s%%" % self.args['cpuperc']
+        if self.get_option('state'):
+            triggers += 'State: %s ' % self.get_option('state')
+        if self.get_option('rss'):
+            triggers += "RSS usage above %s " % self.get_option('rss')
+        if self.get_option('vms'):
+            triggers += "VMS usage above %s " % self.get_option('vms')
+        if self.get_option('memperc'):
+            triggers += "%Mem usage above %s%% " % self.get_option('memperc')
+        if self.get_option('cpuperc'):
+            triggers += "%CPU usage above %s%%" % self.get_option('cpuperc')
         return triggers
 
     def _get_pid_from_name(self, pname):
@@ -87,7 +88,7 @@ class Process(BaseRig):
                     proc.info['exe'] and basename(proc.info['exe']) == pname or
                     proc.info['cmdline'] and proc.info['cmdline'][0] == pname):
                 _procs.append(proc.info['pid'])
-        if len(_procs) > 1 and not self.args['all']:
+        if len(_procs) > 1 and not self.get_option('all'):
             msg = ("Multiple PIDs found for process '%s', use --all to watch "
                    "all PIDs" % pname)
             raise CannotConfigureRigError(msg)
@@ -99,6 +100,10 @@ class Process(BaseRig):
         memory threshold specified in bytes.
         '''
         suffixes = [('K', 10), ('M', 20), ('G', 30)]
+        if not any(suf[0] in val for suf in suffixes):
+            raise CannotConfigureRigError(
+                "Values must be given with K, M, or G suffixes"
+            )
         for suff in suffixes:
             if suff[0].lower() in val.lower():
                 _suf = suff
@@ -117,8 +122,18 @@ class Process(BaseRig):
         psutil. Or it will determine the memory size in bytes to use as our
         threshold.
         '''
+
+        # make sure we're actually watching something
+        if not any(self.get_option(arg) for arg in
+                   ['rss', 'vms', 'state', 'memperc', 'cpuperc']):
+            raise CannotConfigureRigError("No metric given to watch. See "
+                                          "'rig process --help'")
         self.proc_list = []
-        for process in self.args['proc']:
+        procs = []
+        _procs = self.get_option('process')
+        for proc in _procs:
+            procs.extend(proc.split(','))
+        for process in procs:
             try:
                 _proc = int(process)
                 self.proc_list.append(_proc)
@@ -135,7 +150,7 @@ class Process(BaseRig):
                 continue
             # if any PIDs don't actually exist, abort.
             raise CannotConfigureRigError("Invalid PID provided: %s" % proc)
-        if self.args['state']:
+        if self.get_option('state'):
             _supported_states = [
                 psutil.STATUS_RUNNING,
                 psutil.STATUS_SLEEPING,
@@ -144,17 +159,18 @@ class Process(BaseRig):
                 psutil.STATUS_ZOMBIE,
                 psutil.STATUS_DEAD
             ]
-            if self.args['state'].strip('!') not in _supported_states:
+            if self.get_option('state').strip('!') not in _supported_states:
                 msg = ("Invalid status '%s' provided. Must be one of the "
                        "following: %s" % (
-                        self.args['state'],
+                        self.get_option('state'),
                         ', '.join(s for s in _supported_states))
                        )
                 raise CannotConfigureRigError(msg)
-        if self.args['rss']:
-            self.rss_limit = self._get_bytes(self.args['rss'])
-        if self.args['vms']:
-            self.vms_limit = self._get_bytes(self.args['vms'])
+        if self.get_option('rss'):
+            self.rss_limit = self._get_bytes(self.get_option('rss'))
+        if self.get_option('vms'):
+            self.vms_limit = self._get_bytes(self.get_option('vms'))
+        self.set_option('process', self.proc_list)
         return True
 
     def setup(self):
@@ -163,24 +179,24 @@ class Process(BaseRig):
         process item we can monitor for and the user requested.
         '''
         self._validate()
-        stat = self.args['state']
+        stat = self.get_option('state')
         for proc in self.proc_list:
-            if self.args['state']:
+            if stat:
                 invert = stat.startswith('!')
                 self.add_watcher_thread(self.watch_process_for_status,
                                         args=(proc, stat, invert))
-            if self.args['rss']:
+            if self.get_option('rss'):
                 self.add_watcher_thread(self.watch_process_for_mem,
                                         args=(proc, self.rss_limit, 'rss'))
-            if self.args['vms']:
+            if self.get_option('vms'):
                 self.add_watcher_thread(self.watch_process_for_mem,
                                         args=(proc, self.vms_limit, 'vms'))
-            if self.args['memperc']:
-                limit = float(self.args['memperc'])
+            if self.get_option('memperc'):
+                limit = float(self.get_option('memperc'))
                 self.add_watcher_thread(self.watch_process_for_perc,
                                         args=(proc, limit, 'memory'))
-            if self.args['cpuperc']:
-                limit = float(self.args['cpuperc'])
+            if self.get_option('cpuperc'):
+                limit = float(self.get_option('cpuperc'))
                 self.add_watcher_thread(self.watch_process_for_perc,
                                         args=(proc, limit, 'cpu'))
 
