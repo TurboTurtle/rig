@@ -18,7 +18,9 @@ from pipes import quote
 from rigging.actions import BaseAction
 
 TCPDUMP_BIN = '/usr/sbin/tcpdump'
-TCPDUMP_OPTS = '-s 0 -n'
+# -Z is needed to avoid the privilege drop that happens before opening the
+# first savefile, which would result in an ENOPERM and a failed rig
+TCPDUMP_OPTS = '-Z root -s 0 -n'
 
 
 class Tcpdump(BaseAction):
