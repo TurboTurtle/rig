@@ -396,10 +396,10 @@ class BaseRig():
             _act = self.supported_actions[action]
             if action in self.args and self.args[_act.enabling_opt]:
                 _action = self.supported_actions[action]
+                _action.set_tmp_dir(self._tmp_dir)
                 loaded = _action.load(self.args)
                 if not loaded:
                     self._exit(1)
-                _action.set_tmp_dir(self._tmp_dir)
                 self._actions[action] = _action
 
     def setup(self):
