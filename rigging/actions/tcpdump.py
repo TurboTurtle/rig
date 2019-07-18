@@ -52,15 +52,15 @@ class Tcpdump(BaseAction):
         _date = dt.datetime.today().strftime("%d-%m-%Y-%H:%M:%S")
         name = "%s-%s-%s" % (self.exec_cmd('hostname')['stdout'].strip(),
                              _date,
-                             self.args['iface'])
+                             self.get_option('iface'))
         self.loc = "%s%s.pcap" % (self.tmp_dir, name)
         cmd = ("%s %s -i %s -C %s -W %s "
-               % (TCPDUMP_BIN, TCPDUMP_OPTS, self.args['iface'],
-                  self.args['size'], self.args['count'])
+               % (TCPDUMP_BIN, TCPDUMP_OPTS, self.get_option('iface'),
+                  self.get_option('size'), self.get_option('count'))
                )
         cmd += "-w %s" % self.loc
-        if self.args['filter']:
-            cmd += " %s" % quote(self.args['filter'])
+        if self.get_option('filter'):
+            cmd += " %s" % quote(self.get_option('filter'))
         self.log_debug("Running tcpdump as '%s'" % cmd)
         self.devnull = open(os.devnull, 'w')
         self.proc = subprocess.Popen(shlex.split(cmd), shell=False,
