@@ -27,7 +27,7 @@ class SoSReport(BaseAction):
         try:
             cmd = "%s --tmp-dir=%s" % (SOS_BIN, self.tmp_dir)
             if self.args['sos_opts']:
-                cmd += " %s" % self.args['sos_opts']
+                cmd += " %s" % self.get_option('sos_opts')
             ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
