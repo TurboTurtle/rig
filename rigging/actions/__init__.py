@@ -34,9 +34,10 @@ class BaseAction():
     priority = 10
     required_binaries = ()
 
-    def __init__(self, parser, rig_id):
+    def __init__(self, parser, rig):
         self.parser = parser
-        self.id = rig_id
+        self.rig = rig
+        self.id = self.rig.id
 
     def set_tmp_dir(self, tmp_dir):
         if os.path.exists(tmp_dir):
@@ -82,6 +83,13 @@ class BaseAction():
         self.logger.debug(msg)
         if not self.detached:
             self.console.debug(msg)
+
+    def get_option(self, option):
+        '''
+        Return the value for the given option from the rig or the command line
+        args
+        '''
+        return self.rig.get_option(option)
 
     def exec_cmd(self, cmd):
         '''

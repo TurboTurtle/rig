@@ -49,6 +49,7 @@ class BaseRig():
     '''
     triggered = False
     watcher_threads = []
+    rig_wide_opts = ()
 
     def __init__(self, parser):
         self.detached = False
@@ -83,6 +84,8 @@ class BaseRig():
             self._sock, self._sock_address = self._create_rig_socket()
             self._tmp_dir = self._create_temp_dir()
             self.files = []
+            self.rig_options = {}
+            self._load_rig_wide_options()
 
     def _exit(self, errno):
         '''
@@ -209,8 +212,19 @@ class BaseRig():
                                      [mod_short_name])
                     module = inspect.getmembers(mod, inspect.isclass)[1]
                     actions[module[1].action_name] = module[1](self.rig_parser,
-                                                               self.id)
+                                                               self)
         return actions
+
+    def _load_rig_wide_options(self):
+        '''
+        Based on the rig's rig_wide_options member, take the values for those
+        options and load them into the rig_options dict to be used for global
+        usage in actions, so we can avoid having to specify the same value over
+        and over between rigs and actions.
+        '''
+        for opt in self.rig_wide_opts:
+            if opt in self.args:
+                self.rig_options[opt] = self.args[opt]
 
     def _setup_parser(self, parser):
         '''
@@ -286,6 +300,12 @@ class BaseRig():
         if not self.detached and self.debug:
             self.console.debug(msg)
 
+    def set_option(self, option, value):
+        '''
+        Override the rig_wide_option for OPTION with VALUE.
+        '''
+        self.rig_options[option] = value
+
     def get_option(self, option):
         '''
         Retrieve a specified option from the loaded commandline options.
@@ -298,10 +318,18 @@ class BaseRig():
                 on if it has a value at all.
         '''
         if option in self.args.keys():
-            if not isinstance(self.args[option], bool):
-                return str(self.args[option])
+            _opt = self.args[option]
+            # if the option is not set from the cmdline, and it is loaded from
+            # the rig options (as opposed to action options), give the rig-wide
+            # option
+            if not _opt and option in self.rig_options.keys():
+                return self.rig_options[option]
+            # otherwise, provide the action-specific option value
             else:
-                return self.args[option]
+                return _opt
+        else:
+            if option in self.rig_options.keys() and self.rig_options[option]:
+                return self.rig_options[option]
         return False
 
     def set_parser_options(self, parser):
@@ -387,8 +415,8 @@ class BaseRig():
         Main entry point for rigs.
         '''
         try:
-            self._register_actions()
             self.setup()
+            self._register_actions()
             # detach from console
             if not self.foreground:
                 print(self.id)
