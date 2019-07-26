@@ -43,7 +43,7 @@ class Tcpdump(BaseAction):
                             help='Interface to listen on (default eth0)')
         parser.add_argument('--size', default=10, type=int,
                             help='Maximum size of packet capture in MB')
-        parser.add_argument('--count', default=1, type=int,
+        parser.add_argument('--captures', default=1, type=int,
                             help='Number of capture files to keep')
         return parser
 
@@ -58,7 +58,7 @@ class Tcpdump(BaseAction):
         self.loc = "%s%s.pcap" % (self.tmp_dir, name)
         cmd = ("%s %s -i %s -C %s -W %s "
                % (TCPDUMP_BIN, TCPDUMP_OPTS, self.get_option('iface'),
-                  self.get_option('size'), self.get_option('count'))
+                  self.get_option('size'), self.get_option('captures'))
                )
         cmd += "-w %s" % self.loc
         if self.get_option('filter'):
