@@ -17,6 +17,7 @@ import random
 import string
 import socket
 import sys
+import time
 
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
@@ -240,6 +241,8 @@ class BaseRig():
                             help='Run the rig in the foreground')
         parser.add_argument('--debug', action='store_true',
                             help='Print debug messages to console')
+        parser.add_argument('--delay', type=int, default=0,
+                            help='Seconds to delay running actions')
         return self.set_parser_options(parser)
 
     def compile_details(self):
@@ -465,6 +468,10 @@ class BaseRig():
                 self.log_info(
                     'Watcher thread triggered. Stopping other watcher threads')
                 self.pool._threads.clear()
+                if self.args['delay']:
+                    self.log_debug('Delaying trigger for %s seconds'
+                                   % self.args['delay'])
+                    time.sleep(self.args['delay'])
                 self.trigger_actions()
         except Exception:
             raise
