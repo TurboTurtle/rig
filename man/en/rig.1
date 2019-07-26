@@ -15,6 +15,28 @@ for a trigger condition, and once that trigger condition is met takes actions
 defined by the user.
 
 
+.SH GLOBAL OPTIONS
+The following are options available to all rigs (resources).
+
+.TP
+.B \-\-delay DELAY
+Specify the number of seconds to wait after a rig is triggered before running
+the configured actions. Note that the rig will still trigger and stop all watcher
+threads immediately - this delay comes after thread termination but before action
+execution in order to avoid a possible race condition where multiple watcher threads
+could conceivably trigger during a sufficiently high delay time.
+
+Default 0 seconds, meaning execute actions immediately upon rig trigger condition
+being met.
+
+.TP
+.B \-\-foreground
+Run the rig in the foreground, keeping stdout attached.
+
+.TP
+.B \-\-debug
+Set logging level to debug instead of the default info level.
+
 .SH SUBCOMMANDS
 
 .TP
