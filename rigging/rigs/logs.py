@@ -50,6 +50,9 @@ class Logs(BaseRig):
                                help='Do not watch any journals')
         subparser.add_argument('-m', '--message', required=True,
                                help='String to trigger against')
+        subparser.add_argument('--count', default=1, type=int,
+                               help=('Trigger only after message has been '
+                                     'matched this many times'))
         return subparser
 
     @property
@@ -70,6 +73,7 @@ class Logs(BaseRig):
         '''
         Watch logs and/or unit files for the provided message
         '''
+        self.counter = 0
         self.message = self.get_option('message')
         watch_files = []
         watch_units = []
@@ -147,14 +151,18 @@ class Logs(BaseRig):
             src  - where the line is coming from, used for logging purposes
 
         Returns
-            bool - did line match the message option
+            bool - did line match the message option *and* is the count option
+                   threshold met.
         '''
         if re.match(self.message, line):
+            self.counter += 1
             self.log_info(
                 "Matched user-specified message \"%s\" against line \"%s\""
-                " from %s" % (self.message, line, src)
+                " from %s. Message counter at %s of max %s."
+                % (self.message, line, src, self.counter,
+                   self.get_option('count'))
             )
-            return True
+            return self.counter >= self.get_option('count')
         return False
 
     def _read_file(self, fileobj):
