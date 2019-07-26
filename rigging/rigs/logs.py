@@ -79,6 +79,13 @@ class Logs(BaseRig):
                 if os.path.isfile(mfile):
                     watch_files.append(mfile)
                 else:
+                    if (mfile == '/var/log/messages' and not
+                            self.get_option('no_journal')):
+                        self.log_info(
+                            'This system does not have a %s file. '
+                            'Ignoring files and only watching journal'
+                            % mfile)
+                        continue
                     msg = "%s is not a file. Aborting..." % mfile
                     raise CannotConfigureRigError(msg)
         if not self.get_option('no_journal'):
