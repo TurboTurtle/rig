@@ -44,7 +44,8 @@ class Gcore(BaseAction):
                     proc.info['exe'] and basename(proc.info['exe']) == pname or
                     proc.info['cmdline'] and proc.info['cmdline'][0] == pname):
                 _procs.append(proc.info['pid'])
-        if len(_procs) > 1 and not self.get_option('all'):
+        if len(_procs) > 1 and not (self.get_option('all') or
+                                    self.get_option('all_pids')):
             msg = ("Multiple PIDs found for process '%s', use --all to watch "
                    "all PIDs" % pname)
             self.log_error(msg)
@@ -97,12 +98,13 @@ class Gcore(BaseAction):
                 self.log_error("Cannot collect core for pid %s - pid no "
                                "longer exists" % pid[0])
                 continue
-            self.log_debug("Collecting gcore of %s at %s" % (pid[0], loc))
+            _loc = loc + ".%s" % pid[0]
+            self.log_debug("Collecting gcore of %s at %s" % (pid[0], _loc))
             try:
                 ret = self.exec_cmd("gcore -o %s %s" % (loc, pid[0]))
                 if ret['status'] == 0:
-                    if isfile(loc):
-                        fname = loc
+                    if isfile(_loc):
+                        fname = _loc
                     else:
                         fname = ret['stdout'].splitlines()[-2].split()[-1]
                     self.add_report_file(fname)
