@@ -76,6 +76,14 @@ a regex string or an exact message. Be very careful in using the \fB'*'\fR regex
 character as this may cause unintended behavior such as the rig immediately
 triggering on the first message seen.
 
+Note that a small amount of transformation and testing is done on the provided STRING.
+First, '*' characters are converted to the python-style regex match of '.*'. After
+which, rig performs a test on if the provided message will regex-match itself, and
+if that fails the rig aborts the creation process.
+
+Aside from the conversion noted above, regexes provided in this option must be
+python-style and not shell-style.
+
 .TP
 .B \-\-logfile FILE
 A comma-delimited list of files to watch. Each \fBFILE\fR specified will be

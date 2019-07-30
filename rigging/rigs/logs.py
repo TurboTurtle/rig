@@ -13,6 +13,7 @@ import re
 import select
 import time
 
+from fnmatch import translate
 from rigging.rigs import BaseRig
 from rigging.exceptions import CannotConfigureRigError
 from systemd import journal
@@ -69,12 +70,44 @@ class Logs(BaseRig):
     def trigger(self):
         return self.get_option('message')
 
+    def _sanitize_message(self, message):
+        '''
+        Inspects the message option given to the rig and will attempt to
+        check it for common errors and warn when one is found.
+        '''
+        errmsg = ''
+        # We can't outright convert to shell-style regex, but we can at least
+        # trap the most common schism of using '*' as a match-all.
+        message = message.replace('*', '.*')
+        try:
+            # attempt to perform a regex match on itself. This is to catch
+            # regex syntax errors early on. Note that we have to strip any of
+            # the otherwise required escaping in order to properly self-test
+            test_message = message
+            for c in '[]()':
+                test_message = test_message.replace('\\' + c, c)
+            _check = re.match(message, test_message)
+            if _check is None:
+                # the regex style is syntactically correct for parsing
+                # however the message did not trigger on itself, so there must
+                # be an error. This usually happens when regex syntax appears
+                # in the message directly, like [] or () characters.
+                errmsg = ('Message failed self-matching test, check any regex '
+                          'provided. Hint: are brackets and parentheses '
+                          'escaped?')
+        except Exception as err:
+            errmsg = ('Error in regex syntax (%s). Remember to use python-'
+                      'style regex instead of shell-style.' % err)
+        if errmsg:
+            raise CannotConfigureRigError(errmsg)
+        return message
+
     def setup(self):
         '''
         Watch logs and/or unit files for the provided message
         '''
         self.counter = 0
-        self.message = self.get_option('message')
+        self.message = self._sanitize_message(self.get_option('message'))
         watch_files = []
         watch_units = []
         watcher_threads = []
