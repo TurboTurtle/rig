@@ -14,13 +14,16 @@ import json
 import logging
 import os
 import random
+import shutil
 import string
 import socket
 import sys
+import tarfile
 import time
 
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
+from datetime import datetime
 from rigging.exceptions import *
 
 RIG_DIR = '/var/run/rig/'
@@ -243,6 +246,8 @@ class BaseRig():
                             help='Print debug messages to console')
         parser.add_argument('--delay', type=int, default=0,
                             help='Seconds to delay running actions')
+        parser.add_argument('--no-archive', default=False, action='store_true',
+                            help='Do not create a tar archive after execution')
         return self.set_parser_options(parser)
 
     def compile_details(self):
@@ -440,6 +445,7 @@ class BaseRig():
             _threads.append(self._control_pool.submit(self._monitor_resource))
             self._status = 'Running'
             ret = wait(_threads, return_when=FIRST_COMPLETED)
+            self.archive_name = self.create_archive()
             self.report_created_files()
             self._cleanup()
             if ret:
@@ -476,13 +482,32 @@ class BaseRig():
         except Exception:
             raise
 
+    def create_archive(self):
+        '''
+        Takes the contents on the temp directory used for the rig and creates
+        a tarball of them, placing the archive in /var/tmp.
+
+        Later, the rig will remove the temp directory for itself.
+        '''
+        if self.get_option('no_archive'):
+            self.log_info('Not creating a tar archive of collected data')
+            return
+        _arc_date = datetime.strftime(datetime.now(), '%Y-%m-%d-%H:%M:%S')
+        _arc_name = "/var/tmp/rig-%s-%s" % (self.id, _arc_date)
+        with tarfile.open(_arc_name, 'w:gz') as tar:
+            tar.add(self._tmp_dir)
+        return _arc_name
+
     def report_created_files(self):
         '''
         Report all files created by all actions
         '''
-        if self.files:
+        if not self.archive_name and self.files:
             self.log_info("The following files were created for this rig: %s"
                           % ', '.join(f for f in self.files))
+        if self.archive_name:
+            self.log_info("An archive containing this rig's data is available "
+                          "at %s" % self.archive_name)
 
     def add_watcher_thread(self, target, args):
         '''
@@ -547,6 +572,8 @@ class BaseRig():
             self._control_pool.shutdown(wait=False)
             self._control_pool._threads.clear()
             thread._threads_queues.clear()
+            if self.archive_name:
+                shutil.rmtree(self._tmp_dir)
         except Exception:
             pass
         try:

@@ -37,6 +37,16 @@ Run the rig in the foreground, keeping stdout attached.
 .B \-\-debug
 Set logging level to debug instead of the default info level.
 
+.TP
+.B \-\-no-archive
+Do not create a tar archive of the collected data after a rig has been triggered.
+
+Normally, once all data has been collected, rig will create a gzip'd tar archive under
+/var/tmp containing all the files created from the rig's actions - after which,
+the temp directory at /var/tmp/rig/<id>/ is deleted.
+
+Using this option skips creating the archive and preserves the temp directory.
+
 .SH SUBCOMMANDS
 
 .TP
