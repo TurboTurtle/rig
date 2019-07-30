@@ -9,7 +9,7 @@
 # See the LICENSE file in the source distribution for further information.
 
 from rigging.actions import BaseAction
-from os.path import basename
+from os.path import basename, isfile
 import psutil
 
 
@@ -101,7 +101,10 @@ class Gcore(BaseAction):
             try:
                 ret = self.exec_cmd("gcore -o %s %s" % (loc, pid[0]))
                 if ret['status'] == 0:
-                    fname = ret['stdout'].splitlines()[-1].split()[-1]
+                    if isfile(loc):
+                        fname = loc
+                    else:
+                        fname = ret['stdout'].splitlines()[-2].split()[-1]
                     self.add_report_file(fname)
             except Exception as err:
                 self.log_error("Error collecting coredump of %s: %s"
