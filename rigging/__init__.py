@@ -174,7 +174,10 @@ class Rigging():
         This does not return anything, but instead prints directly to console.
         '''
         _fmt = "{id:7}{pid:7}{rig_type:8}{watch:30} {trigger:<35} {status:<10}"
-        socks = os.listdir('/var/run/rig')
+        try:
+            socks = os.listdir('/var/run/rig')
+        except Exception:
+            socks = []
         rigs = []
         for sock in socks:
             try:
