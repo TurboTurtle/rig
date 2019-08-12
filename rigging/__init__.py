@@ -152,7 +152,6 @@ class Rigging():
                     if ret['success'] and ret['id'] == rig:
                         self.log_info("%s destroyed" % ret['id'])
                     else:
-                        print('!!!')
                         self.log_error(ret)
 
                 else:
