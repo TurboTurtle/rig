@@ -61,6 +61,14 @@ rigs. Note that if another entity kills the pid for the running rig, destroy wil
 fail as the socket is no longer connected to the (now killed) process. In this case
 use the \fB--force\fR option to cleanup the lingering socket.
 
+.TP
+.B rig info \-i [ID]
+Get detailed information on a rig. This information will include configuration
+options, the entire cmdline string given to launch the rig, as well as information
+on each action the rig is configured to take and what the expected result from those
+action(s) are.
+
+Currently, this data is written to stdout in JSON format.
 
 .SH RESOURCES
 These are the system resources that rig can monitor. There may be additional

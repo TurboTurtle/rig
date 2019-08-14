@@ -84,6 +84,16 @@ class BaseAction():
         if not self.detached:
             self.console.debug(msg)
 
+    def action_info(self):
+        '''
+        Return information about what the action should generate. This is
+        called during 'rig info <rig id>' and appears as the 'expected_result'
+        element.
+
+        MUST be overridden by specific actions
+        '''
+        return 'Not defined by action'
+
     def get_option(self, option):
         '''
         Return the value for the given option from the rig or the command line

@@ -111,6 +111,14 @@ class Rigging():
         if self.args['subcmd'] == 'list':
             self.list_rigs()
             return 0
+        if self.args['subcmd'] == 'info':
+            self.args = vars(self.parser.parse_args())
+            try:
+                _rig = RigConnection(self.args['id'])
+                print(_rig.info())
+            except MissingSocketError:
+                print("No such rig exists: %s" % self.args['id'])
+            return
         self._setup_logging()
         if self.args['subcmd'] == 'destroy':
             self.args = vars(self.parser.parse_args())
@@ -260,6 +268,15 @@ class RigConnection():
         if ret['success']:
             return ast.literal_eval(ret['result'])
         raise Exception
+
+    def info(self):
+        '''
+        Query detailed rig information
+        '''
+        ret = json.loads(self._rig_communicate('info').decode())
+        if ret['success']:
+            return json.dumps(ast.literal_eval(ret['result']), indent=4)
+        return ''
 
     def destroy(self):
         '''

@@ -53,3 +53,10 @@ class SoSReport(BaseAction):
         parser.add_argument('--sos-opts',
                             help='commandline options for sosreport')
         return parser
+
+    def action_info(self):
+        msg = "An sosreport from the host in %s" % self.tmp_dir
+        if self.get_option('sos_opts'):
+            msg += (" run with the following options: %s"
+                    % self.get_option('sos_opts'))
+        return msg

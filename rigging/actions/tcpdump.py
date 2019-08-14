@@ -97,3 +97,9 @@ class Tcpdump(BaseAction):
             self.devnull.close()
         except Exception:
             pass
+
+    def action_info(self):
+        return "A packet capture from interface %s using filter %s" % (
+            self.get_option('iface'),
+            self.get_option('filter')
+        )

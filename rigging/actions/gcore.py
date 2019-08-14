@@ -112,3 +112,7 @@ class Gcore(BaseAction):
                 self.log_error("Error collecting coredump of %s: %s"
                                % (pid[0], err))
         return True
+
+    def action_info(self,):
+        return ("A coredump for each of the following PIDs: %s"
+                % ', '.join(str(p[0]) for p in self.pid_list))

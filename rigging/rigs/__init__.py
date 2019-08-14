@@ -84,6 +84,8 @@ class BaseRig():
 
         self._can_run = self._load_args()
         if self._can_run:
+            self.created_time = datetime.strftime(datetime.now(),
+                                                  '%D %H:%M:%S')
             self._setup_rig_logging()
             self._sock, self._sock_address = self._create_rig_socket()
             self._tmp_dir = self._create_temp_dir()
@@ -289,6 +291,25 @@ class BaseRig():
             'status': self._status
         }
 
+    @property
+    def info(self, value=None):
+        '''
+        Returns detailed information about the rig for a more in-depth view
+        than status provides
+        '''
+        return {
+            'id': self.id,
+            'pid': str(self.pid),
+            'rig_type': self.resource_name,
+            'status': self._status,
+            'cmdline': " ".join(sys.argv),
+            'debug': self.debug,
+            'watch': self.watching,
+            'trigger': self.trigger,
+            'created': self.created_time,
+            'actions': self._get_action_info()
+        }
+
     def _setup_rig_logging(self):
         extra = {'rig_id': self.id}
         self.logger = logging.getLogger('rig')
@@ -414,6 +435,24 @@ class BaseRig():
                 if not loaded:
                     self._exit(1)
                 self._actions[action] = _action
+
+    def _get_action_info(self):
+        '''
+        Provide detailed information about the actions that will be taken
+        when the rig is triggered
+
+        Returns:
+            dict of action dicts with associated information
+        '''
+        acts = {}
+        for action in self._actions:
+            _act = self._actions[action]
+            acts[action] = {
+                'name': action,
+                'priority': _act.priority,
+                'expected_result': _act.action_info()
+            }
+        return acts
 
     def setup(self):
         '''

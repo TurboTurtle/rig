@@ -28,3 +28,6 @@ class Noop(BaseAction):
     def trigger_action(self):
         self.log_info('No-op action triggered. Doing nothing.')
         return True
+
+    def action_info(self):
+        return 'This action will generate no content'
