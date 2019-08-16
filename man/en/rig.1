@@ -128,6 +128,57 @@ The number of times the \fB\-\-message\fR string should be matched before the ri
 is triggered. Default 1 - meaning match on the first occurence.
 
 .RE
+
+.TP
+.B ping
+Perform a simple ongoing ping test against a specified host. Pings are sent
+one at a time at a defined interval, and the response is evaluated. Ping-type
+rigs may monitor for number of lost packets and/or packets exceeding a specified
+RTT in milliseconds.
+
+Packets are first evaluated for loss (including timeouts), then for RTT time.
+
+The following options are available for the \fBping\fR rig:
+.RS 7
+.TP
+.B \-\-host ADDRESS
+The target IP or hostname to ping. This is a \fBrequired\fR option in order for
+a ping rig to be created.
+
+During rig creation, a 'sanity check' ping is sent to the ADDRESS to ensure that
+it is an address that is reachable on the network and that it will respond to
+ICMP packets. If this sanity check fails, rig creation is aborted.
+.TP
+.B \-\-ping-timeout SECONDS
+Specify the number of SECONDS to allow for a ping response. If a ping encounters
+a timeout, then it is considered \fBboth\fR a lost packet and a packet exceeding
+the RTT threshold (see \fB\-\-ping-ms-max\fR and \fB\-\-ping-ms-count\fR).
+.TP
+.B \-\-lost-count PACKETS
+Specify the number of PACKETS to accept being lost or timed-out, before triggering
+the rig.
+
+Default: 1 (trigger on the first lost packet)
+.TP
+.B \-\-ping-interval SECONDS
+Specify the number of SECONDS to wait between ping requests sent to the target host.
+
+Default: 1
+.TP
+.B \-\-ping-ms-max MILLISECONDS
+Specify the RTT threshold to allow for a returned ping request. If the RTT reported
+by the ping command is above this value in milliseconds, it is counted against the
+threshold of packets exceeding this value specified by \fB\-\-ping-ms-count\fR.
+
+By default, this form of checking is disabled. Any integer value passed to this
+option will enable RTT monitoring.
+.TP
+.B \-\-ping-ms-count PACKETS
+Specify the number of PACKETS that may exceed the defined \fB\-\-ping-ms-max\fR
+RTT value before triggering the rig.
+
+Default: 5
+.RE
 .TP
 .B process
 Watch a single process or list of processes for state changes or resource consumption

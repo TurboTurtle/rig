@@ -31,6 +31,7 @@ if __name__ == '__main__':
     logs    -   Watch log file(s) and/or journal(s) for a message
     process -   Monitor a process for resource usage or state changes
     system  -   Monitor whole system resource usage metrics
+    ping    -   Ping a host and trigger on packet loss threshold
     '''
 
     # TODO: figure out how to dynamically build the usage message
