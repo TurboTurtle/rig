@@ -70,6 +70,9 @@ class Logs(BaseRig):
     def trigger(self):
         return self.get_option('message')
 
+    def reset_counters(self):
+        self.counter = 0
+
     def _sanitize_message(self, message):
         '''
         Inspects the message option given to the rig and will attempt to

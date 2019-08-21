@@ -62,6 +62,7 @@ class BaseRig():
         self.parser_usage = self.parser_usage % {'name': self.resource_name}
         self.pool = None
         self.parser = parser
+        self.restart_count = 0
         subparser = self.parser.add_subparsers()
         self.rig_parser = subparser.add_parser(self.resource_name)
         self.rig_parser = self._setup_parser(self.rig_parser)
@@ -167,7 +168,7 @@ class BaseRig():
         '''
         try:
             _dir = RIG_TMP_DIR + self.id + '/'
-            os.makedirs(_dir)
+            os.makedirs(_dir, exist_ok=True)
             return _dir
         except OSError:
             raise CannotConfigureRigError('failed to create temp directory')
@@ -250,6 +251,8 @@ class BaseRig():
                             help='Seconds to delay running actions')
         parser.add_argument('--no-archive', default=False, action='store_true',
                             help='Do not create a tar archive after execution')
+        parser.add_argument('--restart', default=0, type=int,
+                            help='Number of times a rig should restart itself')
         return self.set_parser_options(parser)
 
     def compile_details(self):
@@ -302,6 +305,8 @@ class BaseRig():
             'pid': str(self.pid),
             'rig_type': self.resource_name,
             'status': self._status,
+            'restart_max': self.args['restart'],
+            'restart_count': self.restart_count,
             'cmdline': " ".join(sys.argv),
             'debug': self.debug,
             'watch': self.watching,
@@ -476,17 +481,21 @@ class BaseRig():
                 self.detached = True
                 for action in self._actions:
                     self._actions[action].detached = True
-            # listen on the UDS socket in one thread, spin the watcher
-            # off in a separate thread
-            _threads = []
-            self._control_pool = ThreadPoolExecutor(2)
-            _threads.append(self._control_pool.submit(self._listen_on_socket))
-            _threads.append(self._control_pool.submit(self._monitor_resource))
-            self._status = 'Running'
-            ret = wait(_threads, return_when=FIRST_COMPLETED)
-            self.archive_name = self.create_archive()
-            self.report_created_files()
-            self._cleanup()
+            ret = self._create_and_monitor()
+            if self.args['restart'] != 0:
+                while (self.restart_count < self.args['restart'] or
+                        self.args['restart'] == -1):
+                    self.restart_count += 1
+                    self.log_info("Restarting rig %s. Current restart count is"
+                                  " %s" % (self.id, self.restart_count))
+                    # Re-create the temp dir for the rig every restart so we
+                    # don't overlap data being archived
+                    self._create_temp_dir()
+                    # clear and re-load the configured rig options
+                    self.reset_counters()
+                    ret = self._create_and_monitor()
+            self._status = 'Exiting'
+            self._cleanup_socket()
             if ret:
                 os._exit(0)
             else:
@@ -499,6 +508,35 @@ class BaseRig():
             self.log_error(err)
             self._cleanup()
             self._exit(1)
+
+    def _create_and_monitor(self):
+        '''
+        Create the threads for listening on the socket and monitoring the bits
+        the rig is meant to monitor.
+
+        Blocks until either the monitoring thread returns, or there is a socket
+        related problem that interrupts the listening thread.
+
+        After waiting for the first thread to exit, this will clean itself up
+        by removing both the thread pool and the temp dir used after the
+        results are archived.
+
+        This method may be called multiple times if the rig is configured to
+        restart itself after being triggered, hence it is responsible for the
+        entire creation and take down process.
+        '''
+        _threads = []
+        # listen on the UDS socket in one thread, spin the watcher
+        # off in a separate thread
+        self._control_pool = ThreadPoolExecutor(2)
+        _threads.append(self._control_pool.submit(self._listen_on_socket))
+        _threads.append(self._control_pool.submit(self._monitor_resource))
+        self._status = 'Running'
+        ret = wait(_threads, return_when=FIRST_COMPLETED)
+        self.archive_name = self.create_archive()
+        self.report_created_files()
+        self._cleanup_threads()
+        return ret
 
     def _monitor_resource(self):
         '''
@@ -520,6 +558,17 @@ class BaseRig():
                 self.trigger_actions()
         except Exception:
             raise
+
+    def reset_counters(self):
+        '''
+        Reset whatever counters a rig uses to determine trigger state. This is
+        called when a rig restarts itself, so that a previous run does not
+        influence the run of the now-restarted rig.
+
+        This SHOULD BE overridden by specific rigs, though if there is not some
+        form of counter that the rig uses, it can be ignored.
+        '''
+        pass
 
     def create_archive(self):
         '''
@@ -601,20 +650,22 @@ class BaseRig():
         except Exception as err:
             self.log_error("Error executing actions: %s" % err)
 
-    def _cleanup(self):
+    def _cleanup_threads(self):
+        for action in self._actions:
+            self._actions[action].cleanup()
+        self.pool.shutdown(wait=False)
+        self.pool._threads.clear()
+        self._control_pool.shutdown(wait=False)
+        self._control_pool._threads.clear()
+        thread._threads_queues.clear()
+
         try:
-            self._status = 'Exiting'
-            for action in self._actions:
-                self._actions[action].cleanup()
-            self.pool.shutdown(wait=False)
-            self.pool._threads.clear()
-            self._control_pool.shutdown(wait=False)
-            self._control_pool._threads.clear()
-            thread._threads_queues.clear()
             if self.archive_name:
                 shutil.rmtree(self._tmp_dir)
         except Exception:
             pass
+
+    def _cleanup_socket(self):
         try:
             os.remove(self._sock_address)
         except OSError as err:

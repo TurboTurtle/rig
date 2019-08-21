@@ -65,6 +65,10 @@ class Ping(BaseRig):
                     )
         return msg
 
+    def reset_counters(self):
+        self.lost_packets = 0
+        self.packet_ms_count = 0
+
     def _run_ping(self):
         try:
             proc = Popen(shlex.split(self.ping_cmd), stderr=PIPE, stdout=PIPE)

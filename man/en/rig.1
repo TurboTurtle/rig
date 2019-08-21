@@ -47,6 +47,23 @@ the temp directory at /var/tmp/rig/<id>/ is deleted.
 
 Using this option skips creating the archive and preserves the temp directory.
 
+.TP
+.B \-\-restart COUNT
+Restart a configured rig up to COUNT number of times after being triggered.
+
+By default, a rig will trigger once and then terminate. Using this option, an
+individual rig may restart itself up to COUNT number of times, producing an
+additional archive of the requested data after the triggering event happens
+again.
+
+Note that this is the number of times to restart, not the total number of times
+to run. Using a restart value of '2' means that there will be 3 total archives
+generated for a rig.
+
+By default, this is set to 0, meaning terminate after the first trigger event.
+Use a value of '-1' to have a rig perpetually restart itself without limit.
+
+
 .SH SUBCOMMANDS
 
 .TP
