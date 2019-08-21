@@ -580,8 +580,8 @@ class BaseRig():
         if self.get_option('no_archive'):
             self.log_info('Not creating a tar archive of collected data')
             return
-        _arc_date = datetime.strftime(datetime.now(), '%Y-%m-%d-%H:%M:%S')
-        _arc_name = "/var/tmp/rig-%s-%s" % (self.id, _arc_date)
+        _arc_date = datetime.strftime(datetime.now(), '%Y-%m-%d-%H%M%S')
+        _arc_name = "/var/tmp/rig-%s-%s.tar.gz" % (self.id, _arc_date)
         with tarfile.open(_arc_name, 'w:gz') as tar:
             tar.add(self._tmp_dir)
         return _arc_name
