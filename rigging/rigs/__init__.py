@@ -494,6 +494,7 @@ class BaseRig():
                     # clear and re-load the configured rig options
                     self.reset_counters()
                     ret = self._create_and_monitor()
+            self.trigger_kdump()
             self._status = 'Exiting'
             self._cleanup_socket()
             if ret:
@@ -647,11 +648,25 @@ class BaseRig():
         try:
             for action in sorted(self._actions,
                                  key=lambda x: self._actions[x].priority):
+                if action == 'kdump':
+                    continue
                 self.log_debug("Triggering action %s" % action)
                 self._actions[action]._trigger_action()
                 self.files.extend(self._actions[action].finish_execution())
         except Exception as err:
             self.log_error("Error executing actions: %s" % err)
+
+    def trigger_kdump(self):
+        '''
+        If configured, kdump needs to be triggered at the end of execution.
+
+        Thus, this is called after everything else.
+        '''
+        if 'kdump' in self._actions.keys():
+            # if we don't remove this here, we'll have a stale socket for
+            # every kdump rig created
+            self._cleanup_socket()
+            self._actions['kdump']._trigger_action()
 
     def _cleanup_threads(self):
         for action in self._actions:
