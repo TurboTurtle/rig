@@ -30,12 +30,12 @@ Default 0 seconds, meaning execute actions immediately upon rig trigger conditio
 being met.
 
 .TP
-.B \-\-foreground
-Run the rig in the foreground, keeping stdout attached.
-
-.TP
 .B \-\-debug
 Set logging level to debug instead of the default info level.
+
+.TP
+.B \-\-foreground
+Run the rig in the foreground, keeping stdout attached.
 
 .TP
 .B \-\-no-archive
@@ -46,6 +46,29 @@ Normally, once all data has been collected, rig will create a gzip'd tar archive
 the temp directory at /var/tmp/rig/<id>/ is deleted.
 
 Using this option skips creating the archive and preserves the temp directory.
+
+.TP
+.B \-\-repeat COUNT
+Repeat certain actions COUNT number of times after the initial execution of the
+action.
+
+Actions will, unless otherwise specified by this option, only execute once. Using
+this option actions that support repetition will be repeated an \fBadditional\fR
+COUNT number of times. For example, using \fB\-\-repeat 2\fR will result in repeatable
+actions being executed three (3) total times.
+
+Not every action supports repetition - in fact most do not. See specific action's
+sections for information on if it can be repeated or not.
+
+.TP
+.B \-\-repeat-delay SECONDS
+Number of seconds to wait between repetitive executions of the same action.
+
+This can be useful when using an action like \fBgcore\fR when you want to get coredumps
+over a certain time period. For example, using \fB\-\-repeat 1 --repeat-delay 60\fR
+will give you two (2) coredumps taken one minute apart.
+
+Defaults to one second.
 
 .TP
 .B \-\-restart COUNT
@@ -359,6 +382,8 @@ Note that this does _not_ interrupt the running process(es). Cores are saved to
 a PID or process name was provided. This action will be executed first when a rig
 is triggered and multiple actions are specified.
 
+This action supports repetition via the \fB--repeat\fR option.
+
 The \fBgcore\fR action supports the following options:
 .RS 7
 .TP
@@ -371,6 +396,7 @@ for the same process name, the default behavior is to fail rig creation. Use the
 This option can be specified multiple times. E.G. \fB\-\-gcore 12345 \-\-gcore
 myprocess\fR will generate a coredump for PID 12345 and a process matching the
 name 'myprocess'.
+
 .TP
 .B \-\-all-pids
 Tells this action to collect a coredump for \fBall\fR PIDs found for a provided

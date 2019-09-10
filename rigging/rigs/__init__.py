@@ -253,6 +253,11 @@ class BaseRig():
                             help='Do not create a tar archive after execution')
         parser.add_argument('--restart', default=0, type=int,
                             help='Number of times a rig should restart itself')
+        parser.add_argument('--repeat', default=0, type=int,
+                            help=('Number of times to repeat actions that '
+                                  'support repitition'))
+        parser.add_argument('--repeat-delay', default=1, type=int,
+                            help='Seconds to delay between repeating actions')
         return self.set_parser_options(parser)
 
     def compile_details(self):

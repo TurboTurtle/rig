@@ -23,6 +23,7 @@ class Gcore(BaseAction):
     enabling_opt_desc = 'Capture a coredump of a running process'
     priority = 1
     required_binaries = ('gcore',)
+    repeatable = True
 
     def add_action_options(self, parser):
         parser.add_argument('--gcore', nargs='?', action='append', default=[],
@@ -91,20 +92,21 @@ class Gcore(BaseAction):
 
     def trigger_action(self):
         for pid in self.pid_list:
-            loc = self.tmp_dir + 'core'
+            _loc = self.tmp_dir + 'core'
             if pid[1]:
-                loc += ".%s" % pid[1]
+                _loc += ".%s" % pid[1]
             if not psutil.pid_exists(int(pid[0])):
                 self.log_error("Cannot collect core for pid %s - pid no "
                                "longer exists" % pid[0])
                 continue
-            _loc = loc + ".%s" % pid[0]
+            if self.repeat_count:
+                _loc = _loc.replace('core', "core-%s" % self.repeat_count)
             self.log_debug("Collecting gcore of %s at %s" % (pid[0], _loc))
             try:
-                ret = self.exec_cmd("gcore -o %s %s" % (loc, pid[0]))
+                ret = self.exec_cmd("gcore -o %s %s" % (_loc, pid[0]))
                 if ret['status'] == 0:
-                    if isfile(_loc):
-                        fname = _loc
+                    if isfile(_loc + '.%s' % pid[0]):
+                        fname = _loc + '.%s' % pid[0]
                     else:
                         fname = ret['stdout'].splitlines()[-2].split()[-1]
                     self.add_report_file(fname)

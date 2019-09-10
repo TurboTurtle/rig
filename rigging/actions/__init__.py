@@ -12,6 +12,7 @@ import logging
 import os
 import shlex
 import shutil
+import time
 
 from rigging.exceptions import *
 from subprocess import Popen, PIPE
@@ -33,11 +34,13 @@ class BaseAction():
     action_name = ''
     priority = 10
     required_binaries = ()
+    repeatable = False
 
     def __init__(self, parser, rig):
         self.parser = parser
         self.rig = rig
         self.id = self.rig.id
+        self.repeat_count = 0
 
     def set_tmp_dir(self, tmp_dir):
         if os.path.exists(tmp_dir):
@@ -181,6 +184,17 @@ class BaseAction():
         '''
         try:
             self.trigger_action()
+            if self.get_option('repeat') > 0 and self.repeatable:
+                while self.repeat_count < self.get_option('repeat'):
+                    # sleep here instead of after the trigger so that the first
+                    # repeat is also delayed from the initial execution.
+                    time.sleep(self.get_option('repeat_delay'))
+                    self.repeat_count += 1
+                    self.log_info("Triggering action %s again. Repeat count is"
+                                  " now %s. Will repeat %s times total"
+                                  % (self.action_name, self.repeat_count,
+                                     self.get_option('repeat')))
+                    self.trigger_action()
             return True
         except Exception as err:
             self.log_error("Exception triggering action %s: %s" %
