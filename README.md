@@ -90,6 +90,7 @@ will be restricted to modules that are available for the **RHEL 8 and later** fa
 A current list of all module requirements outside of the Python 3 Standard Library is as followings:
 
 - python3-psutil 5 or newer
+- python3-systemd
 
 
 Note that many actions will call external tools. These are not considered hard requirements as users may very well never use those specific actions.

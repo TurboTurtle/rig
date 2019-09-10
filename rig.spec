@@ -7,6 +7,7 @@ License: GPLv2
 BuildArch: noarch
 Requires: python3
 Requires: python3-psutil
+Requires: python3-systemd
 
 BuildRequires: python3-devel
 BuildRequires: python3-setuptools
