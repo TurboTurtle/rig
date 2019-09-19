@@ -1,6 +1,6 @@
 Summary: Monitor a system for events and trigger specific actions
 Name: rig
-Version: 0.0.3
+Version: 0.1.0
 Release: 1
 Source0: http://people.redhat.com/jhunsake/rig/%{name}-%{version}.tar.gz
 License: GPLv2
@@ -41,6 +41,9 @@ install -p -m644 man/en/rig.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Thu Sep 19 2019 Jake Hunsaker <jhunsake@redhat.com> - 0.1.0-1
+- First beta build
+
 * Mon Jun 24 2019 Jake Hunsaker <jhunsake@redhat.com> - 0.0.3-1
 - Alpha 3 build
 
