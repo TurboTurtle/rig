@@ -132,7 +132,7 @@ class Ping(BaseRig):
         '''
         self.log_debug('Sending a sanity check ping before initialization')
         try:
-            resp = self._run_ping()
+            self._run_ping()
             if self.lost_packets == 0:
                 self.log_debug('Sanity check passed. Ping successful')
                 return True
