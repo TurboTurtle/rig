@@ -72,9 +72,9 @@ class Process(BaseRig):
         if self.get_option('vms'):
             triggers += "VMS usage above %s " % self.get_option('vms')
         if self.get_option('memperc'):
-            triggers += "%Mem usage above %s%% " % self.get_option('memperc')
+            triggers += "%%Mem usage above %s%% " % self.get_option('memperc')
         if self.get_option('cpuperc'):
-            triggers += "%CPU usage above %s%%" % self.get_option('cpuperc')
+            triggers += "%%CPU usage above %s%%" % self.get_option('cpuperc')
         return triggers
 
     def _get_pid_from_name(self, pname):
