@@ -54,6 +54,7 @@ class BaseRig():
     triggered = False
     watcher_threads = []
     rig_wide_opts = ()
+    _triggered_from_cmdline = False
 
     def __init__(self, parser):
         self.detached = False
@@ -565,6 +566,24 @@ class BaseRig():
         except Exception:
             raise
 
+    @property
+    def manual_trigger(self):
+        '''
+        Manually triggers the rig, kicking off the watcher thread
+        '''
+        self.log_info('Received request to manually trigger rig.')
+        self._triggered_from_cmdline = True
+
+    def _watch_for_manual_trigger(self):
+        '''
+        This thread will watch for a manual trigger request from the cmdline,
+        and return True iff that request is made
+        '''
+        while not self._triggered_from_cmdline:
+            time.sleep(1)
+        self.log_debug('Trigger from cmdline received. Triggering watcher')
+        return True
+
     def reset_counters(self):
         '''
         Reset whatever counters a rig uses to determine trigger state. This is
@@ -636,6 +655,7 @@ class BaseRig():
             self.pool = ThreadPoolExecutor()
             for wthread in self.watcher_threads:
                 futures.append(self.pool.submit(wthread[0], *wthread[1]))
+            futures.append(self.pool.submit(self._watch_for_manual_trigger))
             results = wait(futures, return_when=FIRST_COMPLETED)
             result = list(results[0])[0].result()
             return result

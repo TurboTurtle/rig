@@ -103,6 +103,23 @@ class Rigging():
     def log_warn(self, msg):
         self.console.warn(msg)
 
+    def parse_rig_args(self):
+        '''
+        Parse passed args from the cmdline right now, rather than waiting for
+        a specific rig to do so
+        '''
+        self.args = vars(self.parser.parse_args())
+
+    def get_id(self):
+        '''
+        Return the value of --id, or raise exception if not provided
+        '''
+        self.parse_rig_args()
+        if 'id' in self.args.keys() and self.args['id']:
+            return self.args['id']
+        print('No rig ID provided, specify a rig with -i/--id')
+        raise SystemExit(1)
+
     def execute(self):
         '''
         Based on commandline invocation, setup an appropriate rig or execute a
@@ -112,17 +129,17 @@ class Rigging():
             self.list_rigs()
             return 0
         if self.args['subcmd'] == 'info':
-            self.args = vars(self.parser.parse_args())
             try:
-                _rig = RigConnection(self.args['id'])
+                _rig = RigConnection(self.get_id())
                 print(_rig.info())
             except MissingSocketError:
                 print("No such rig exists: %s" % self.args['id'])
             return
         self._setup_logging()
         if self.args['subcmd'] == 'destroy':
-            self.args = vars(self.parser.parse_args())
-            return self.destroy_rig(self.args['id'])
+            return self.destroy_rig(self.get_id())
+        if self.args['subcmd'] == 'trigger':
+            return self.trigger_rig(self.get_id())
         # load known resource monitors
         self._load_supported_rigs()
         if self.args['subcmd'] in self._supported_rigs:
@@ -133,6 +150,38 @@ class Rigging():
             self.log_error("Unknown rig type %s provided" %
                            self.args['subcmd'])
             return 1
+
+    def trigger_rig(self, rig_id):
+        '''
+        Trigger a rig right now, rather than waiting for a trigger condition to
+        be met.
+
+        Returns
+            int - exit code based on success of triggering
+                0 - success
+                1 - failed to trigger
+                2 - invalid command invocation
+        '''
+        if rig_id == '-1':
+            self.log_error('Error:  \'trigger\' requires a rig id')
+            return 2
+        try:
+            _rig = RigConnection(rig_id)
+            try:
+                ret = _rig.trigger()
+                if ret['success']:
+                    print("Manually triggered rig %s" % rig_id)
+                else:
+                    print("Failed to trigger rig %s" % rig_id)
+                    return 1
+            except Exception as err:
+                self.log_error("Could not manually trigger rig %s: %s"
+                               % (rig_id, err))
+                return 1
+        except MissingSocketError:
+            self.log_error("Non-existing rig %s specified" % rig_id)
+            return 1
+        return 0
 
     def destroy_rig(self, rig_id):
         '''
@@ -286,6 +335,12 @@ class RigConnection():
             str matching the rig ID
         '''
         return json.loads(self._rig_communicate('destroy').decode())
+
+    def trigger(self):
+        '''
+        Triggers the rig
+        '''
+        return json.loads(self._rig_communicate('manual_trigger').decode())
 
 
 class RigRotatingFileHandler(RotatingFileHandler):
