@@ -122,7 +122,7 @@ class System(BaseRig):
         # some psutil methods are relative to the previous call, so make the
         # first call before looping to set the right context and not trigger
         # on the first poll.
-        _poll = poller()
+        poller()
         while True:
             _poll = poller()
             for metric in metrics:
