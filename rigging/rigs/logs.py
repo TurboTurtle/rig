@@ -13,7 +13,6 @@ import re
 import select
 import time
 
-from fnmatch import translate
 from rigging.rigs import BaseRig
 from rigging.exceptions import CannotConfigureRigError
 from systemd import journal
@@ -112,8 +111,6 @@ class Logs(BaseRig):
         self.counter = 0
         self.message = self._sanitize_message(self.get_option('message'))
         watch_files = []
-        watch_units = []
-        watcher_threads = []
         if not self.get_option('no_files'):
             for mfile in self.get_option('logfile').split(','):
                 if os.path.isfile(mfile):
