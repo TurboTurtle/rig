@@ -64,3 +64,13 @@ class DestroyRig(Exception):
     Raised when we intentionally destroy a rig, so we can trap the exit of the
     thread pool
     '''
+
+
+__all__ = [
+    'BindSocketError',
+    'CannotConfigureRigError',
+    'CreateSocketError',
+    'DestroyRig',
+    'MissingSocketError',
+    'SocketExistsError'
+]
