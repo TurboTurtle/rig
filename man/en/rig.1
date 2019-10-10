@@ -110,6 +110,14 @@ action(s) are.
 
 Currently, this data is written to stdout in JSON format.
 
+.TP
+.B rig trigger \-i [ID]
+Manually trigger rig with id \fBID\fR. This will cause the specified rig to begin
+executing the actions configured for it, as if the trigger condition had been met.
+
+Note that this is only effective on a single rig basis, so using a value of 'all'
+for the ID will not work.
+
 .SH RESOURCES
 These are the system resources that rig can monitor. There may be additional
 manpages for specific resources. Where applicable this will be noted below.
