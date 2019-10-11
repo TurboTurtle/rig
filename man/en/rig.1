@@ -409,6 +409,14 @@ name 'myprocess'.
 .B \-\-all-pids
 Tells this action to collect a coredump for \fBall\fR PIDs found for a provided
 process name.
+
+.TP
+.B \-\-freeze
+Freeze the process(es) that will be core dumped by sending a SIGSTOP prior to
+calling gcore on the discovered pid(s).
+
+If successful, then rig will send a SIGCONT after the gcore execution has
+completed in order to thaw the process.
 .TP
 .RE
 .TP

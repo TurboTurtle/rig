@@ -10,7 +10,10 @@
 
 from rigging.actions import BaseAction
 from os.path import basename, isfile
+from os import kill
+
 import psutil
+import signal
 
 
 class Gcore(BaseAction):
@@ -30,8 +33,10 @@ class Gcore(BaseAction):
                             help=self.enabling_opt_desc)
         parser.add_argument('--all-pids', action='store_true',
                             help=('Execute over all pids found when using '
-                                  'process names')
-                            )
+                                  'process names'))
+        parser.add_argument('--freeze', action='store_true',
+                            help=('Freeze the process before core dumping, '
+                                  'then thaw after completion'))
         return parser
 
     def _get_pid_from_name(self, pname):
@@ -90,8 +95,32 @@ class Gcore(BaseAction):
         self.log_debug(msg)
         return True
 
+    def freeze_pid(self, pid):
+        '''
+        Send a SIGSTOP to the specified pid
+        '''
+        if self.get_option('freeze'):
+            self.log_debug("Freezing pid %s" % pid)
+            try:
+                kill(pid, signal.SIGSTOP)
+                return True
+            except Exception as err:
+                self.log_error("Could not send SIGSTOP to %s: %s" % (pid, err))
+        return False
+
+    def thaw_pid(self, pid):
+        '''
+        Send a SIGCONT to the specified pid
+        '''
+        self.log_debug("Thawing pid %s" % pid)
+        try:
+            kill(pid, signal.SIGCONT)
+        except Exception as err:
+            self.log_error("Could not send SIGCONT to %s: %s" % (pid, err))
+
     def trigger_action(self):
         for pid in self.pid_list:
+            _frozen = self.freeze_pid(int(pid[0]))
             _loc = self.tmp_dir + 'core'
             if pid[1]:
                 _loc += ".%s" % pid[1]
@@ -110,6 +139,8 @@ class Gcore(BaseAction):
                     else:
                         fname = ret['stdout'].splitlines()[-2].split()[-1]
                     self.add_report_file(fname)
+                if _frozen:
+                    self.thaw_pid(int(pid[0]))
             except Exception as err:
                 self.log_error("Error collecting coredump of %s: %s"
                                % (pid[0], err))
