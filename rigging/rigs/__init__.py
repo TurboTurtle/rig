@@ -88,12 +88,14 @@ class BaseRig():
         if self._can_run:
             self.created_time = datetime.strftime(datetime.now(),
                                                   '%D %H:%M:%S')
+            self.rig_options = {}
+            self._load_rig_wide_options()
             self._setup_rig_logging()
+            self.log_debug("Initializing %s rig %s" %
+                           (self.resource_name, self.id))
             self._sock, self._sock_address = self._create_rig_socket()
             self._tmp_dir = self._create_temp_dir()
             self.files = []
-            self.rig_options = {}
-            self._load_rig_wide_options()
 
     def _exit(self, errno):
         '''
@@ -327,8 +329,10 @@ class BaseRig():
         self.logger = logging.LoggerAdapter(self.logger, extra)
         self.console = logging.getLogger('rig_console')
         self.console = logging.LoggerAdapter(self.console, extra)
-        self.log_debug("Initializing %s rig %s" %
-                       (self.resource_name, self.id))
+        if self.get_option('debug'):
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.INFO)
 
     def log_error(self, msg):
         self.logger.error(msg)
