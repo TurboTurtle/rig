@@ -53,10 +53,17 @@ class System(BaseRig):
 
     @property
     def trigger(self):
-        ret = ''
+        ret = []
         for conf in self.conf:
-            ret += "%s above %s " % conf, self.conf[conf]
-        return ret
+            if self.conf[conf]:
+                ret.append("%s above %s" % (conf, self.conf[conf]))
+        if self.get_option('cpuperc'):
+            ret.append("CPU usage above %s%%" % self.get_option('cpuperc'))
+        if self.get_option('memperc'):
+            ret.append("Memory usage above %s%%" % self.get_option('memperc'))
+        if self.get_option('loadavg'):
+            ret.append("System loadavg above %s" % self.get_option('loadavg'))
+        return ', '.join(r for r in ret)
 
     def _compile_opts_as_dict(self):
         self.conf = {}
@@ -75,16 +82,16 @@ class System(BaseRig):
         for _mem in self._memory_metrics:
             if _mem in self.conf.keys() and self.conf[_mem]:
                 mem[_mem] = self.conf[_mem]
-        if self.args['memperc']:
-            mem['percent'] = self.args['memperc']
+        if self.get_option('memperc'):
+            mem['percent'] = self.get_option('memperc')
         if cpu:
             self.add_watcher_thread(self.watch_util_metrics,
                                     args=(cpu, psutil.cpu_times_percent,
                                           'cpu')
                                     )
-        if self.args['cpuperc']:
+        if self.get_option('cpuperc'):
             self.add_watcher_thread(self.watch_cpu_utilization,
-                                    args=(self.args['cpuperc'],))
+                                    args=(self.get_option('cpuperc'),))
         if mem:
             self.add_watcher_thread(self.watch_util_metrics,
                                     args=(mem, psutil.virtual_memory,
