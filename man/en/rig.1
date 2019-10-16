@@ -367,6 +367,22 @@ If \fBexceeded\fR, trigger the rig.
 
 This value may be a whole integer or a float. Floats are precise out to one (1)
 decimal point.
+.TP
+.B \-\-loadavg FLOAT
+System load average as reported by the OS to use as a threshold value. If the
+reported loadavg exceeds this value, trigger the rig. This option can accept
+either an integer (1) or a float (1.0).
+
+Linux returns loadavg data for the past 1, 5, and 15 minutes. The system rig
+will monitor only one (1) of these intervals at a time, as controlled by the
+\fB\-\-loadavg-interval\fR option.
+.TP
+.B \-\-loadavg\-interval [1, 5, 15]
+Which time interval the rig should monitor when watching the system's loadavg.
+Only 1, 5, and 15 are accepted values for this option, as that is what the Linux
+kernel returns loadavg data for.
+
+Default: 1
 .RE
 
 .SH ACTIONS

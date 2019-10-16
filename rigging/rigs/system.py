@@ -10,6 +10,7 @@
 
 from rigging.rigs import BaseRig
 
+import os
 import psutil
 import time
 
@@ -38,6 +39,11 @@ class System(BaseRig):
                             help="Total CPU usage as a percentage")
         parser.add_argument('--memperc', type=float,
                             help="Total memory usage as a percentage")
+        parser.add_argument('--loadavg', type=float,
+                            help='Single interval load average threshold')
+        parser.add_argument('--loadavg-interval', type=int, default=1,
+                            choices=[1, 5, 15],
+                            help='Which minute interval to watch. Default: 1')
         return parser
 
     @property
@@ -84,6 +90,28 @@ class System(BaseRig):
                                     args=(mem, psutil.virtual_memory,
                                           'memory')
                                     )
+        if self.get_option('loadavg'):
+            self.add_watcher_thread(self.watch_loadavg,
+                                    args=(self.get_option('loadavg')))
+
+    def watch_loadavg(self, threshold):
+        '''
+        Watch overall system loadavg for exceeding value given to the
+        --loadavg option.
+
+        Will watch the 1/5/15 minute interval value based on the value of
+        --loadavg-interval
+        '''
+        idx = (1, 5, 15).index(self.get_option('loadavg_interval'))
+        while True:
+            _val = os.getloadavg()[idx]
+            if _val >= threshold:
+                self.log_info(
+                    "System %s-minute loadavg at %s, exceeding threshold of %s"
+                    % (self.get_option('loadavg_interval'), _val, threshold)
+                )
+                return True
+            time.sleep(1)
 
     def watch_cpu_utilization(self, perc):
         '''
