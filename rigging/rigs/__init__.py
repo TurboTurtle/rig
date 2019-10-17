@@ -101,7 +101,8 @@ class BaseRig():
         '''
         Handles pre-mature exits due to errors
         '''
-        self._cleanup()
+        self._cleanup_threads()
+        self._cleanup_socket()
         raise SystemExit(errno)
 
     def _detach(self):
@@ -513,11 +514,9 @@ class BaseRig():
                 os._exit(ret)
         except KeyboardInterrupt:
             self.log_debug('Received keyboard interrupt, destroying rig.')
-            self._cleanup()
             self._exit(140)
         except Exception as err:
             self.log_error(err)
-            self._cleanup()
             self._exit(1)
 
     def _create_and_monitor(self):
@@ -698,13 +697,17 @@ class BaseRig():
             self._actions['kdump']._trigger_action()
 
     def _cleanup_threads(self):
-        for action in self._actions:
-            self._actions[action].cleanup()
-        self.pool.shutdown(wait=False)
-        self.pool._threads.clear()
-        self._control_pool.shutdown(wait=False)
-        self._control_pool._threads.clear()
-        thread._threads_queues.clear()
+        try:
+            for action in self._actions:
+                self._actions[action].cleanup()
+            self.pool.shutdown(wait=False)
+            self.pool._threads.clear()
+            self._control_pool.shutdown(wait=False)
+            self._control_pool._threads.clear()
+            thread._threads_queues.clear()
+        except AttributeError:
+            # _exit() called before rig was initialized
+            pass
 
         try:
             if self.archive_name:
