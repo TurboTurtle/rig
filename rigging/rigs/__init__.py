@@ -367,6 +367,8 @@ class BaseRig():
                 returned as a string. Otherwise return True or False depending
                 on if it has a value at all.
         '''
+        if option in self.rig_options.keys() and self.rig_options[option]:
+            return self.rig_options[option]
         if option in self.args.keys():
             _opt = self.args[option]
             # if the option is not set from the cmdline, and it is loaded from
@@ -377,9 +379,6 @@ class BaseRig():
             # otherwise, provide the action-specific option value
             else:
                 return _opt
-        else:
-            if option in self.rig_options.keys() and self.rig_options[option]:
-                return self.rig_options[option]
         return False
 
     def set_parser_options(self, parser):
