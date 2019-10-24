@@ -151,20 +151,23 @@ class Process(BaseRig):
             # if any PIDs don't actually exist, abort.
             raise CannotConfigureRigError("Invalid PID provided: %s" % proc)
         if self.get_option('state'):
-            _supported_states = [
-                psutil.STATUS_RUNNING,
-                psutil.STATUS_SLEEPING,
-                psutil.STATUS_DISK_SLEEP,
-                psutil.STATUS_STOPPED,
-                psutil.STATUS_ZOMBIE,
-                psutil.STATUS_DEAD
-            ]
-            if self.get_option('state').strip('!') not in _supported_states:
-                msg = ("Invalid status '%s' provided. Must be one of the "
-                       "following: %s" % (
-                        self.get_option('state'),
-                        ', '.join(s for s in _supported_states))
-                       )
+            _state_map = {
+                psutil.STATUS_RUNNING: ('R', 'run'),
+                psutil.STATUS_SLEEPING: ('S', 'sleep'),
+                psutil.STATUS_DISK_SLEEP: ('D', 'UN'),
+                psutil.STATUS_STOPPED: ('T', 'stop'),
+                psutil.STATUS_ZOMBIE: ('Z', 'zomb'),
+                psutil.STATUS_DEAD: ('X',)
+            }
+            _state = self.get_option('state').strip('!')
+            for key, value in _state_map.items():
+                if _state in value:
+                    _repl = self.get_option('state').replace(_state, key)
+                    self.set_option('state', _repl)
+            if self.get_option('state').strip('!') not in _state_map.keys():
+                msg = ("Invalid status '%s' provided. See 'man rig' for a "
+                       "full list of supported statuses."
+                       % self.get_option('state'))
                 raise CannotConfigureRigError(msg)
         if self.get_option('rss'):
             self.rss_limit = self._get_bytes(self.get_option('rss'))

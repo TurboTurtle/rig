@@ -246,12 +246,17 @@ all processes found for a process name, use the \fB\-\-all\fR option.
 The state that a process needs to be in, in order to trigger the rig. The following
 is a list of supported states:
 
-    dead         The process is in a dead (X) state. Should never be seen.
-    disk-sleep   The process is in an uninterruptible sleep (D) state.
-    running      The process is in a running (R) state.
-    sleeping     The process is in an interruptible sleeping (S) state.
-    stopped      The process is in a stopped (T) state.
-    zombie       The process is a zombie or in Z state.
+    NAME         DESCRIPTION                      SHORTHAND
+    dead         Dead - should never be seen         'X'
+    disk-sleep   Uninterruptible sleep           'D' or 'UN'
+    running      Currently running               'R' or 'run'
+    sleeping     Interruptible sleep             'S' or 'sleep'
+    stopped      Stopped                         'T' or 'stop'
+    zombie       Exited, still in proc table     'Z' or 'zomb'
+
+Users can use either the full status name, or the shorthand noted in the final
+column of the table above. Both the names and the shorthand values are case
+sensitive.
 
 This can also be set to a "not" value by preceeding one of the above state strings
 with a exclaimation mark (!), e.g. '!sleeping' will match any non-sleep (S) state
@@ -260,7 +265,9 @@ when using the '!' character.
 
 Note that using '!running' will cause rig to \fBnot\fR trigger against a state
 of 'sleeping', as generally speaking 'running' processes spend much of their time
-in S state, and it is assumed that triggering against such a process is not desired. 
+in S state, and it is assumed that triggering against such a process is not desired.
+
+Process status is polled once every second.
 .TP
 .B \-\-rss INTEGER
 The amount of rss (resident set size) memory usage to use as a threshold for triggering
