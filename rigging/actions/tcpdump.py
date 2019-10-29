@@ -16,6 +16,7 @@ import subprocess
 
 from pipes import quote
 from rigging.actions import BaseAction
+from rigging.exceptions import CannotConfigureRigError
 
 TCPDUMP_BIN = '/usr/sbin/tcpdump'
 # -Z is needed to avoid the privilege drop that happens before opening the
@@ -73,7 +74,7 @@ class Tcpdump(BaseAction):
             # tcpdump was configured incorrectly
             stdout, stderr = self.proc.communicate(timeout=1)
             if stderr:
-                raise Exception(stderr.decode('utf-8'))
+                raise CannotConfigureRigError(stderr.decode('utf-8').strip())
         except subprocess.TimeoutExpired:
             pass
         self.log_debug("Started background tcpdump on interface '%s'"
