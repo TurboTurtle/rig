@@ -10,7 +10,9 @@
 
 import fnmatch
 
+from pipes import quote
 from rigging.actions import BaseAction
+from rigging.exceptions import CannotConfigureRigError
 
 SOS_BIN = '/usr/sbin/sosreport --batch'
 
@@ -22,12 +24,29 @@ class SoSReport(BaseAction):
     enabling_opt_desc = 'Generate a sosreport when triggered'
     priority = 100
     required_binaries = ('sosreport',)
+    sos_opts = ''
+
+    def pre_action(self):
+        '''
+        Performs basic sanity checks against any passed --sos-opts and will
+        abort rig creation if suspect items like shell code are found
+        '''
+        _filt = ['<', '>', '|', '&', ';']
+        _cmd = self.get_option('sos_opts')
+        if _cmd:
+            if any(f in _cmd for f in _filt):
+                raise CannotConfigureRigError(
+                    'Potential shell-code found in --sos-opts. Aborting rig '
+                    'configuration.'
+                )
+            self.sos_opts = quote(_cmd)
+        return True
 
     def trigger_action(self):
         try:
             cmd = "%s --tmp-dir=%s" % (SOS_BIN, self.tmp_dir)
-            if self.args['sos_opts']:
-                cmd += " %s" % self.get_option('sos_opts')
+            if self.sos_opts:
+                cmd += " %s" % self.sos_opts
             ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
