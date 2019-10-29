@@ -153,6 +153,8 @@ class BaseAction():
                     self.log_error("Required binary %s not found" % binary)
                     return False
             return self.pre_action()
+        except CannotConfigureRigError:
+            raise
         except Exception as err:
             self.log_error("Could not execute pre-action for action %s: %s"
                            % (self.action_name, err))
