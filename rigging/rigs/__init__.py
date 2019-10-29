@@ -221,7 +221,7 @@ class BaseRig():
                     mod_short_name = modname.split('.')[2]
                     mod = __import__(modname, globals(), locals(),
                                      [mod_short_name])
-                    module = inspect.getmembers(mod, inspect.isclass)[1]
+                    module = inspect.getmembers(mod, inspect.isclass)[-1]
                     actions[module[1].action_name] = module[1](self.rig_parser,
                                                                self)
         return actions
