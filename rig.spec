@@ -14,7 +14,7 @@ BuildRequires: python3-setuptools
 
 %description
 Rig is a utility designed to watch or monitor specific system resources (e.g.
-log files, journals, network activity, etc...) and then take specific action
+log files, journals, system activity, etc...) and then take specific action
 when the trigger condition is met. It's primary aim is to assist in troubleshooting
 for randomly occurring events.
 
@@ -51,7 +51,6 @@ install -p -m644 man/en/rig.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 - Alpha 2 build
 - New rig - process
 - New actions - noop, gcore, kdump
-
 
 * Mon Jan 14 2019 Jake Hunsaker <jhunsake@redhat.com> - 0.0.1-1
 - Initial build
