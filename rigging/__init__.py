@@ -19,6 +19,7 @@ import socket
 
 from logging.handlers import RotatingFileHandler
 from rigging.exceptions import *
+from rigging.rigs import BaseRig
 
 __version__ = '0.1.0'
 
@@ -63,10 +64,17 @@ class Rigging():
         '''
         mod_short_name = modname.split('.')[2]
         module = __import__(modname, globals(), locals(), [mod_short_name])
-        modules = inspect.getmembers(module, inspect.isclass)
-        for mod in modules:
-            if mod[0] in ('Rigging', 'BaseRig'):
-                modules.remove(mod)
+        _modules = inspect.getmembers(module, inspect.isclass)
+        modules = []
+        for mod in _modules:
+            if not isinstance(mod, list):
+                mod = [mod]
+            for _mod in mod:
+                if _mod[0] in ('Rigging', 'BaseRig'):
+                    continue
+                if not issubclass(_mod[1], BaseRig):
+                    continue
+                modules.append(_mod)
         return modules
 
     def _load_supported_rigs(self):
