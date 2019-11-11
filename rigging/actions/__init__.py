@@ -114,6 +114,7 @@ class BaseAction():
         Returns
             dict containing the exit status and output from the cmd
         '''
+        self.log_debug("Running command %s" % cmd)
         cmd = shlex.split(cmd)
         proc = Popen(cmd, stdout=PIPE, stderr=PIPE, encoding='utf-8',
                      shell=False)
