@@ -24,7 +24,8 @@ class SoSReport(BaseAction):
     enabling_opt_desc = 'Generate a sosreport when triggered'
     priority = 100
     required_binaries = ('sosreport',)
-    sos_opts = ''
+    sos_opts = ('only_plugins', 'skip_plugins', 'enable_plugins',
+                'plugin_option')
 
     def pre_action(self):
         '''
@@ -32,21 +33,26 @@ class SoSReport(BaseAction):
         abort rig creation if suspect items like shell code are found
         '''
         _filt = ['<', '>', '|', '&', ';']
-        _cmd = self.get_option('sos_opts')
-        if _cmd:
+        for _opt in self.sos_opts:
+            _cmd = self.get_option(_opt)
+            if not _cmd:
+                continue
             if any(f in _cmd for f in _filt):
                 raise CannotConfigureRigError(
-                    'Potential shell-code found in --sos-opts. Aborting rig '
-                    'configuration.'
+                    "Potential shell-code found in option %s. Aborting rig "
+                    "configuration." % _opt
                 )
-            self.sos_opts = quote(_cmd)
         return True
 
     def trigger_action(self):
         try:
             cmd = "%s --tmp-dir=%s" % (SOS_BIN, self.tmp_dir)
-            if self.sos_opts:
-                cmd += " %s" % self.sos_opts
+            for _opt in self.sos_opts:
+                if self.get_option(_opt):
+                    cmd += " --%s %s" % (
+                        _opt.replace('_', '-'),
+                        quote(self.get_option(_opt))
+                    )
             ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
@@ -69,13 +75,15 @@ class SoSReport(BaseAction):
     def add_action_options(self, parser):
         parser.add_argument('--sosreport', action='store_true',
                             help=self.enabling_opt_desc)
-        parser.add_argument('--sos-opts',
-                            help='commandline options for sosreport')
+        parser.add_argument('-e', '--enable-plugins', type=str,
+                            help="Explicitly enable these sosreport plugins")
+        parser.add_argument('-k', '--plugin-option', type=str,
+                            help="Specify sosreport plugin options")
+        parser.add_argument('-n', '--skip-plugins', type=str,
+                            help="Skip these sosreport plugins")
+        parser.add_argument('-o', '--only-plugins', type=str,
+                            help="Only enable these sosreport plugins")
         return parser
 
     def action_info(self):
-        msg = "An sosreport from the host in %s" % self.tmp_dir
-        if self.get_option('sos_opts'):
-            msg += (" run with the following options: %s"
-                    % self.get_option('sos_opts'))
-        return msg
+        return "An sosreport from the host in %s" % self.tmp_dir
