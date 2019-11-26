@@ -28,10 +28,11 @@ if __name__ == '__main__':
     destroy -   Destroy a specified rig
 
     <resource> may be any of the following:
-    logs    -   Watch log file(s) and/or journal(s) for a message
-    process -   Monitor a process for resource usage or state changes
-    system  -   Monitor whole system resource usage metrics
-    ping    -   Ping a host and trigger on packet loss threshold
+    logs        -   Watch log file(s) and/or journal(s) for a message
+    process     -   Monitor a process for resource usage or state changes
+    system      -   Monitor whole system resource usage metrics
+    ping        -   Ping a host and trigger on packet loss threshold
+    filesystem  -   Monitor a filesystem, directory, or file
     '''
 
     # TODO: figure out how to dynamically build the usage message

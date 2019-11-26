@@ -391,6 +391,39 @@ kernel returns loadavg data for.
 
 Default: 1
 .RE
+.TP
+.B Filesystem
+
+Watch a filesystem, directory, or file for utilization changes. Currently this
+rig is focused on space consumption, and will trigger when the specified path or
+backing filesystem exceeds the defined threshold for space utilization.
+
+The following options are available for the \fBfilesystem\fR rig:
+.RS 7
+.TP
+.B \-\-path PATH
+Specify the filesystem, directory, or file path for the rig to monitor. The
+location provided must exists when the rig initializes for monitoring to be supported.
+.TP
+.B \-\-size SIZE
+Specify the size threshold to trigger on for the provided \fB\-\-path\fR. The size
+given must be an integer suffixed with either K, M, G, or T. The provided value will
+be converted to bytes.
+.TP
+.B \-\-fs-size SIZE
+Use this option instead of \fB\-\-size\fR if you want to monitor the space usage
+of the backing filesystem for \fB\-\-path\fR rather than the size of the path alone.
+
+Similar to \fB\-\-size\fR this value must be suffixed with either K, M, G, or T.
+.TP
+.B \-\-fs-used PERCENT
+Similar to \fB\-\-fs-size\fR but instead provide a percentage value to trigger on,
+when the filesystem's %used exceeds this value.
+
+Note that using this option is ultimately the same as \fB\-\-fs-size\fR as rig
+will convert the specified percentage into a raw bytes value to use for comparisons.
+.RE
+
 
 .SH ACTIONS
 The following actions are supported responses to triggered rigs. These may be
