@@ -36,6 +36,14 @@ Set logging level to debug instead of the default info level.
 .TP
 .B \-\-foreground
 Run the rig in the foreground, keeping stdout attached.
+.TP
+.B \-\-interval SECONDS
+Specify the amount of time to wait between a rig's polling cycles. Most rigs
+monitor their resources in a flow of update -> compare -> wait, where wait is
+simply sleeping until the next needed update. Use this option to set how long a rig
+should wait/sleep before updating their monitors again.
+
+Default: 1, meaning update and compare once every second.
 
 .TP
 .B \-\-no-archive

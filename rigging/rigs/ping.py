@@ -10,7 +10,6 @@
 
 import re
 import shlex
-import time
 
 from rigging.rigs import BaseRig
 from rigging.exceptions import CannotConfigureRigError
@@ -43,8 +42,6 @@ class Ping(BaseRig):
                                help='Timeout in seconds for response')
         subparser.add_argument('--lost-count', default=1, type=int,
                                help='Packet loss count threshold for trigger')
-        subparser.add_argument('--ping-interval', default=1, type=float,
-                               help='Interval in seconds between pings')
         subparser.add_argument('--ping-ms-max', default=None, type=int,
                                help='Max RTT threshold for pings')
         subparser.add_argument('--ping-ms-count', default=5, type=int,
@@ -176,7 +173,7 @@ class Ping(BaseRig):
                 resp = self._run_ping()
                 if not resp:
                     return True
-                time.sleep(self.get_option('ping_interval'))
+                self.wait_loop()
             except Exception as err:
                 self.log_error(err)
                 # don't inadvertantly trigger rig on an error

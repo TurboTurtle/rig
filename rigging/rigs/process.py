@@ -14,7 +14,6 @@ from rigging.exceptions import CannotConfigureRigError
 from os.path import basename
 
 import psutil
-import time
 
 
 class Process(BaseRig):
@@ -229,7 +228,7 @@ class Process(BaseRig):
                                   "trigger state '%s'."
                                   % (process, _stat, status))
                     return True
-                time.sleep(1)
+                self.wait_loop()
             except psutil._exceptions.NoSuchProcess:
                 if status == '!running':
                     self.log_info("Process %s is no longer running, matching "
@@ -263,7 +262,7 @@ class Process(BaseRig):
                                   "trigger threshold of %s."
                                   % (process, mem_type, _check, limit))
                     return True
-                time.sleep(1)
+                self.wait_loop()
             except psutil._exceptions.NoSuchProcess:
                 self.log_info("Process %s is no longer running, stopping %s "
                               "monitor." % (process, mem_type))
@@ -293,7 +292,7 @@ class Process(BaseRig):
                                   "exceeding trigger threshold of %s%%"
                                   % (process, resource, _perc, limit))
                     return True
-                time.sleep(1)
+                self.wait_loop()
             except psutil._exceptions.NoSuchProcess:
                 self.log_info("Process %s is no longer running, stopping "
                               "%s percentage monitor." % (process, resource))

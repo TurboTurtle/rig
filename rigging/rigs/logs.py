@@ -11,7 +11,6 @@
 import os
 import re
 import select
-import time
 
 from rigging.rigs import BaseRig
 from rigging.exceptions import CannotConfigureRigError
@@ -168,7 +167,7 @@ class Logs(BaseRig):
         _poll.register(_journ_fd, _poll_event)
 
         while True:
-            if _poll.poll(500):
+            if _poll.poll(self.get_option('interval')):
                 if journ.process() == journal.APPEND:
                     for entry in journ:
                         if self._match_line(entry['MESSAGE'], 'journal'):
@@ -208,7 +207,7 @@ class Logs(BaseRig):
         while True:
             line = fileobj.readline()
             if not line:
-                time.sleep(1)
+                self.wait_loop()
                 continue
             yield line
 

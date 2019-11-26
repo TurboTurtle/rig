@@ -262,6 +262,8 @@ class BaseRig():
                                   'support repitition'))
         parser.add_argument('--repeat-delay', default=1, type=int,
                             help='Seconds to delay between repeating actions')
+        parser.add_argument('--interval', default=1, type=int,
+                            help='Time to wait between rig polling intervals')
         return self.set_parser_options(parser)
 
     def compile_details(self):
@@ -682,6 +684,16 @@ class BaseRig():
                 self.files.extend(self._actions[action].finish_execution())
         except Exception as err:
             self.log_error("Error executing actions: %s" % err)
+
+    def wait_loop(self):
+        """Used to sleep a watcher thread for the length of time specified by
+        --interval.
+
+        Using this allows a standardized way to both ensure rigs wait the
+        amount of time requested by the user between polling intervals, and
+        to avoid doing repetitive 'import sleep; time.sleep()' calls.
+        """
+        time.sleep(self.get_option('interval'))
 
     def trigger_kdump(self):
         """

@@ -12,7 +12,6 @@ from rigging.rigs import BaseRig
 
 import os
 import psutil
-import time
 
 
 class System(BaseRig):
@@ -118,7 +117,7 @@ class System(BaseRig):
                     % (self.get_option('loadavg_interval'), _val, threshold)
                 )
                 return True
-            time.sleep(1)
+            self.wait_loop()
 
     def watch_cpu_utilization(self, perc):
         """
@@ -171,7 +170,7 @@ class System(BaseRig):
                 elif resource == 'memory':
                     if self._check_memory(metric, _val, metrics[metric]):
                         return True
-            time.sleep(1)
+            self.wait_loop()
 
     def _check_memory(self, metric, val, threshold):
         """

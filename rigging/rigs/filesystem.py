@@ -13,7 +13,6 @@ from rigging.exceptions import CannotConfigureRigError
 from pathlib import Path
 
 import os
-import time
 
 
 class Filesystem(BaseRig):
@@ -125,7 +124,7 @@ class Filesystem(BaseRig):
                               "threshold of %sB."
                               % (path, current_used, perc, fs_max_used))
                 return True
-            time.sleep(1)
+            self.wait_loop()
 
     def watch_path_size(self, path, size):
         """Watch the specified path and trigger if its size exceeds the
@@ -146,4 +145,4 @@ class Filesystem(BaseRig):
                 )
                 return True
 
-            time.sleep(1)
+            self.wait_loop()
