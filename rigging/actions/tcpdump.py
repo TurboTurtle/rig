@@ -42,7 +42,7 @@ class Tcpdump(BaseAction):
                             help='Packet filter to use')
         parser.add_argument('--iface', '--interface', default='eth0',
                             help='Interface to listen on (default eth0)')
-        parser.add_argument('--size', default=10, type=int,
+        parser.add_argument('--dump-size', default=10, type=int,
                             help='Maximum size of packet capture in MB')
         parser.add_argument('--captures', default=1, type=int,
                             help='Number of capture files to keep')
