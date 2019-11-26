@@ -19,6 +19,7 @@ class Noop(BaseAction):
     action_name = 'noop'
     enabling_opt = 'noop'
     enabling_opt_desc = 'Do nothing. Use for testing rig configurations'
+    repeatable = True
 
     def add_action_options(self, parser):
         parser.add_argument('--noop', action='store_true',
