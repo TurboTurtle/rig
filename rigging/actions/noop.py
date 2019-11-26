@@ -12,9 +12,9 @@ from rigging.actions import BaseAction
 
 
 class Noop(BaseAction):
-    '''
+    """
     Do nothing. Used for testing rig configurations.
-    '''
+    """
 
     action_name = 'noop'
     enabling_opt = 'noop'

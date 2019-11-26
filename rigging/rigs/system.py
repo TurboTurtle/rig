@@ -16,11 +16,11 @@ import time
 
 
 class System(BaseRig):
-    '''
+    """
     Monitor overall system utilization metrics.
 
     These metrics may cover CPU, memory, and/or disk usage.
-    '''
+    """
 
     parser_description = 'Monitor overall system utilization metrics'
     _cpu_metrics = ['iowait', 'steal', 'nice', 'guest', 'user']
@@ -102,13 +102,13 @@ class System(BaseRig):
                                     args=(self.get_option('loadavg')))
 
     def watch_loadavg(self, threshold):
-        '''
+        """
         Watch overall system loadavg for exceeding value given to the
         --loadavg option.
 
         Will watch the 1/5/15 minute interval value based on the value of
         --loadavg-interval
-        '''
+        """
         idx = (1, 5, 15).index(self.get_option('loadavg_interval'))
         while True:
             _val = os.getloadavg()[idx]
@@ -121,12 +121,12 @@ class System(BaseRig):
             time.sleep(1)
 
     def watch_cpu_utilization(self, perc):
-        '''
+        """
         Watch the given poller for a threshold above perc.
 
         Positional arguments:
             perc        percentage value (float) to use as threshold
-        '''
+        """
         # First iteration returns meaningless data
         psutil.cpu_percent()
         while True:
@@ -137,7 +137,7 @@ class System(BaseRig):
                 return True
 
     def watch_util_metrics(self, metrics, poller, resource):
-        '''
+        """
         Watch the given metric from psutil to see if it exceeds the given
         thresold.
 
@@ -149,7 +149,7 @@ class System(BaseRig):
                         being our trigger threshold
             poller      method to call to gain stats to compare against
             resource    what kind of resource we're watching
-        '''
+        """
         _watching = ', '.join("{!s}={!r}".format(key, val)
                               for (key, val) in metrics.items())
         self.log_debug("Beginning watch of %s utilization of: %s"
@@ -174,11 +174,11 @@ class System(BaseRig):
             time.sleep(1)
 
     def _check_memory(self, metric, val, threshold):
-        '''
+        """
         Helper method to check if the rig should trigger for memory metrics
         based on how that specific metric needs to be compared to current
         stats
-        '''
+        """
         if metric == 'percent':
             if val > threshold:
                 self.log_info("Total memory usage is %s%%, exceeding theshold "

@@ -28,10 +28,10 @@ class SoSReport(BaseAction):
                 'plugin_option')
 
     def pre_action(self):
-        '''
+        """
         Performs basic sanity checks against any passed --sos-opts and will
         abort rig creation if suspect items like shell code are found
-        '''
+        """
         _filt = ['<', '>', '|', '&', ';']
         for _opt in self.sos_opts:
             _cmd = self.get_option(_opt)

@@ -17,9 +17,9 @@ import signal
 
 
 class Gcore(BaseAction):
-    '''
+    """
     Capture a coredump of a running process with gcore (GDB)
-    '''
+    """
 
     action_name = 'gcore'
     enabling_opt = 'gcore'
@@ -40,9 +40,9 @@ class Gcore(BaseAction):
         return parser
 
     def _get_pid_from_name(self, pname):
-        '''
+        """
         Find the PID(s) associated with the given process name
-        '''
+        """
         _procs = []
         filt = ['name', 'exe', 'cmdline', 'pid']
         for proc in psutil.process_iter(attrs=filt):
@@ -59,12 +59,12 @@ class Gcore(BaseAction):
         return _procs
 
     def pre_action(self):
-        '''
+        """
         Handle both process names and specific pids in command line args.
 
         If a PID is supplied, the core name will be core.$pid. If a process
         name is provided, the core name will be core.$name.$pid
-        '''
+        """
         self.pid_list = []
         # the collected list of requested pids, to be filled later
         procs = []
@@ -96,9 +96,9 @@ class Gcore(BaseAction):
         return True
 
     def freeze_pid(self, pid):
-        '''
+        """
         Send a SIGSTOP to the specified pid
-        '''
+        """
         if self.get_option('freeze'):
             self.log_debug("Freezing pid %s" % pid)
             try:
@@ -109,9 +109,9 @@ class Gcore(BaseAction):
         return False
 
     def thaw_pid(self, pid):
-        '''
+        """
         Send a SIGCONT to the specified pid
-        '''
+        """
         self.log_debug("Thawing pid %s" % pid)
         try:
             kill(pid, signal.SIGCONT)

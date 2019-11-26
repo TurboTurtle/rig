@@ -25,9 +25,9 @@ TCPDUMP_OPTS = '-Z root -s 0 -n'
 
 
 class Tcpdump(BaseAction):
-    '''
+    """
     Start a tcpdump and stop it once the trigger condition is met
-    '''
+    """
 
     action_name = 'tcpdump'
     enabling_opt = 'tcpdump'
@@ -49,9 +49,9 @@ class Tcpdump(BaseAction):
         return parser
 
     def pre_action(self):
-        '''
+        """
         Launch the tcpdump
-        '''
+        """
         _date = dt.datetime.today().strftime("%d-%m-%Y-%H:%M:%S")
         name = "%s-%s-%s" % (self.exec_cmd('hostname')['stdout'].strip(),
                              _date,

@@ -20,7 +20,7 @@ PING_BIN = '/usr/bin/ping'
 
 
 class Ping(BaseRig):
-    '''
+    """
     A basic connectivity testing rig. While running, this rig will send a ping
     at a defined interval and record the results. After the ping completes,
     the recorded results are compared to a defined trigger condition (e.g.
@@ -32,7 +32,7 @@ class Ping(BaseRig):
         :opt ping-time-ms       Max time for ping response in ms
         :opt ping-interval:     Time to wait between pings
         :opt lost-count:        Number of packets to lose to trigger rig
-    '''
+    """
 
     parser_description = 'Send pings at a regular interval'
 
@@ -127,9 +127,9 @@ class Ping(BaseRig):
         return False
 
     def _test_initial_ping(self):
-        '''
+        """
         Perform a sanity check ping before launching the rig.
-        '''
+        """
         self.log_debug('Sending a sanity check ping before initialization')
         try:
             self._run_ping()
@@ -164,13 +164,13 @@ class Ping(BaseRig):
         self.add_watcher_thread(target=self.ping_host, args=None)
 
     def ping_host(self, hldr):
-        '''
+        """
         Actually ping the host
 
         Positional arguments:
             hldr:       A holder to account for start_watcher_threads() always
                         passing a positional arg. Unused.
-        '''
+        """
         while True:
             try:
                 resp = self._run_ping()

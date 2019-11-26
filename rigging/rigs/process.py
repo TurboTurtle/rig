@@ -18,7 +18,7 @@ import time
 
 
 class Process(BaseRig):
-    '''
+    """
     Watch a process for state changes and trigger when user-provided definition
     is met.
 
@@ -33,7 +33,7 @@ class Process(BaseRig):
         :opt memperc: The percentage of memory usage on which to trigger
         :opt cpuperc: The percentage of CPU usage on which to trigger
 
-    '''
+    """
 
     parser_description = ('Monitor a process for state or resource consumption'
                           ' thresholds.')
@@ -78,9 +78,9 @@ class Process(BaseRig):
         return triggers
 
     def _get_pid_from_name(self, pname):
-        '''
+        """
         Find the PID(s) associated with the given process name
-        '''
+        """
         _procs = []
         filt = ['name', 'exe', 'cmdline', 'pid']
         for proc in psutil.process_iter(attrs=filt):
@@ -95,10 +95,10 @@ class Process(BaseRig):
         return _procs
 
     def _get_bytes(self, val):
-        '''
+        """
         Converts the user provided string to an integer representing the
         memory threshold specified in bytes.
-        '''
+        """
         suffixes = [('K', 10), ('M', 20), ('G', 30)]
         if not any(suf[0] in val for suf in suffixes):
             raise CannotConfigureRigError(
@@ -110,7 +110,7 @@ class Process(BaseRig):
         return int(val.split(_suf[0])[0]) << _suf[1]
 
     def _validate(self):
-        '''
+        """
         This will do several tasks that ensure the rig is properly defined:
 
         First, it will validate the given PID, or convert a process name
@@ -121,7 +121,7 @@ class Process(BaseRig):
         Third, it will validate the provided status is one we can match with
         psutil. Or it will determine the memory size in bytes to use as our
         threshold.
-        '''
+        """
 
         # make sure we're actually watching something
         if not any(self.get_option(arg) for arg in
@@ -177,10 +177,10 @@ class Process(BaseRig):
         return True
 
     def setup(self):
-        '''
+        """
         Create a monitoring thread for each PID discovered or provided for each
         process item we can monitor for and the user requested.
-        '''
+        """
         self._validate()
         stat = self.get_option('state')
         for proc in self.proc_list:
@@ -204,7 +204,7 @@ class Process(BaseRig):
                                         args=(proc, limit, 'cpu'))
 
     def watch_process_for_status(self, process, status, invert):
-        '''
+        """
         Used to watch the given process(es) for status changes and compares
         the current status to the trigger defined by the status option.
 
@@ -213,7 +213,7 @@ class Process(BaseRig):
             status          The state of the process to trigger on
             invert          Should the boolean comparison for status against
                             current actual process state be reversed
-        '''
+        """
         proc = psutil.Process(process)
         user_stat = status.strip('!')
         self.log_info("Beginning watch of process %s for status '%s'"
@@ -242,7 +242,7 @@ class Process(BaseRig):
                 return False
 
     def watch_process_for_mem(self, process, limit, mem_type):
-        '''
+        """
         Watch the given process(es) for mem consumption values that exceed the
         amount specified by limit.
 
@@ -250,7 +250,7 @@ class Process(BaseRig):
             process     The PID of the process to watch
             limit       The usage threshold in bytes
             mem_type    The memory stat to watch - e.g. rss or vms.
-        '''
+        """
         proc = psutil.Process(process)
         self.log_info("Beginning watch of process %s for %s memory usage of "
                       "%s bytes or higher" % (process, mem_type, limit))
@@ -270,7 +270,7 @@ class Process(BaseRig):
                 return False
 
     def watch_process_for_perc(self, process, limit, resource):
-        '''
+        """
         Watch the given process(es) for memory consumption higher than the
         percentage of system memory defined by limit.
 
@@ -278,7 +278,7 @@ class Process(BaseRig):
             process     The PID of the process to watch
             limit       The usage percentage threshold as a float
             resource    'memory' or 'cpu' - which to monitor
-        '''
+        """
         proc = psutil.Process(process)
         self.log_info("Beginning watch of process %s for total %s usage of"
                       " %s%% or higher" % (process, resource, limit))

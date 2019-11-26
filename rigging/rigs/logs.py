@@ -19,7 +19,7 @@ from systemd import journal
 
 
 class Logs(BaseRig):
-    '''
+    """
     Supports watching one or more log files and/or one or more journals.
     May also watch the system journal.
 
@@ -32,7 +32,7 @@ class Logs(BaseRig):
         :opt no-journal: Disable watching the journal
         :opt message: Trigger string (capable of shell-style regex) to
             watch logfile or journal for.
-    '''
+    """
 
     parser_description = ('Watch one or more log files and/or one or more '
                           'journals for a specified log message')
@@ -73,10 +73,10 @@ class Logs(BaseRig):
         self.counter = 0
 
     def _sanitize_message(self, message):
-        '''
+        """
         Inspects the message option given to the rig and will attempt to
         check it for common errors and warn when one is found.
-        '''
+        """
         errmsg = ''
         # We can't outright convert to shell-style regex, but we can at least
         # trap the most common schism of using '*' as a match-all.
@@ -105,9 +105,9 @@ class Logs(BaseRig):
         return message
 
     def setup(self):
-        '''
+        """
         Watch logs and/or unit files for the provided message
-        '''
+        """
         self.counter = 0
         self.message = self._sanitize_message(self.get_option('message'))
         watch_files = []
@@ -132,7 +132,7 @@ class Logs(BaseRig):
             self.add_watcher_thread(target=self.watch_file, args=wfile)
 
     def watch_journal(self, journals):
-        '''
+        """
         Watches the journal for new entries and compares them to the provided
         message option
 
@@ -146,7 +146,7 @@ class Logs(BaseRig):
 
         Returns
             bool - True when message is matched
-        '''
+        """
         _journs = journals.split(',')
         journ = journal.Reader()
         journ.log_level(journal.LOG_INFO)
@@ -175,7 +175,7 @@ class Logs(BaseRig):
                             return True
 
     def _match_line(self, line, src):
-        '''
+        """
         Helper function that simply looks for a regex match between the given
         line or journal entry and the provided message
 
@@ -186,7 +186,7 @@ class Logs(BaseRig):
         Returns
             bool - did line match the message option *and* is the count option
                    threshold met.
-        '''
+        """
         if re.match(self.message, line):
             self.counter += 1
             self.log_info(
@@ -199,11 +199,11 @@ class Logs(BaseRig):
         return False
 
     def _read_file(self, fileobj):
-        '''
+        """
         Takes an open file object and continually reads from it
 
         Lifted from David Beazley's Generator Tricks for Python.
-        '''
+        """
         fileobj.seek(0, 2)
         while True:
             line = fileobj.readline()
@@ -213,7 +213,7 @@ class Logs(BaseRig):
             yield line
 
     def watch_file(self, filename):
-        '''
+        """
         Watches the provided filename for the given message
 
         Positional arguments:
@@ -223,7 +223,7 @@ class Logs(BaseRig):
 
         Returns:
              bool - True when message is matched
-        '''
+        """
         with open(filename, 'r') as wfile:
             self.log_info('Beginning watch of file %s' % filename)
             logs = self._read_file(wfile)

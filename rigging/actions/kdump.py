@@ -12,13 +12,13 @@ from rigging.actions import BaseAction
 
 
 class Kdump(BaseAction):
-    '''
+    """
     Generate a vmcore via kdump
 
     Note that this action does NOT perform any verification of kdump settings
     or configuration. It is assumed that kdump has been properly tested on the
     node prior to a rig being deployed with this action.
-    '''
+    """
 
     action_name = 'kdump'
     enabling_opt = 'kdump'

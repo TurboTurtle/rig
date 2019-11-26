@@ -31,7 +31,7 @@ RIG_TMP_DIR = '/var/tmp/rig/'
 
 
 class BaseRig():
-    '''
+    """
     Base class for resources/triggers.
 
     Will build a set of argparse options based upon what the rig provides by
@@ -42,15 +42,15 @@ class BaseRig():
                        on the commandline.
         parser_description: The argparse description text for the Rig's submenu
         parser_usage:  The argparse usage text for the Rig's submenu
-    '''
+    """
 
     parser_description = None
-    parser_usage = '''
+    parser_usage = """
     rig %(name)s <options>
 
     Valid actions:
 
-    '''
+    """
     triggered = False
     watcher_threads = []
     rig_wide_opts = ()
@@ -98,20 +98,20 @@ class BaseRig():
             self.files = []
 
     def _exit(self, errno):
-        '''
+        """
         Handles pre-mature exits due to errors
-        '''
+        """
         self._cleanup_threads()
         self._cleanup_socket()
         raise SystemExit(errno)
 
     def _detach(self):
-        '''
+        """
         Here we effectively daemonize the process by using the double-fork
         method. The rig will continue to run until a trigger event, or until
         the rig cli is used to send a termination signal to the socket the rig
         is listening on.
-        '''
+        """
         def _fork():
             try:
                 pid = os.fork()
@@ -142,13 +142,13 @@ class BaseRig():
         return True
 
     def _create_rig_socket(self):
-        '''
+        """
         Creates the UNIX socket that the rig will listen on for lifecycle
         management.
 
         This socket is used by the rig cli when getting status information or
         destroying a deployed rig before the trigger event happens.
-        '''
+        """
         if not os.path.exists(RIG_DIR):
             os.makedirs(RIG_DIR)
         _sock_address = "%s%s" % (RIG_DIR, self.id)
@@ -167,9 +167,9 @@ class BaseRig():
             raise CreateSocketException
 
     def _create_temp_dir(self):
-        '''
+        """
         Create a temp directory for rig to use for saving created files too
-        '''
+        """
         try:
             _dir = RIG_TMP_DIR + self.id + '/'
             os.makedirs(_dir, exist_ok=True)
@@ -178,7 +178,7 @@ class BaseRig():
             raise CannotConfigureRigError('failed to create temp directory')
 
     def _load_args(self):
-        '''
+        """
         Parses the args given to us by the user.
 
         This is called while trying to load a rig. If we do not have any args,
@@ -188,7 +188,7 @@ class BaseRig():
         If there is an unknown option provided, argparse appends it to another
         namespace list, thus if this list contains more than just the resource
         as an element, it means we have an unknown arg.
-        '''
+        """
         args = self.rig_parser.parse_known_args()
         filt = ['--debug', '--foreground']
         self.debug = '--debug' in args[1]
@@ -204,10 +204,10 @@ class BaseRig():
         return False
 
     def _load_supported_actions(self):
-        '''
+        """
         Looks at the defined actions available to rig, and if they match any
         of the strings listed in supported_actions instantiates them.
-        '''
+        """
         actions = {}
         import rigging.actions
         pkg = rigging.actions
@@ -227,25 +227,25 @@ class BaseRig():
         return actions
 
     def _load_rig_wide_options(self):
-        '''
+        """
         Based on the rig's rig_wide_options member, take the values for those
         options and load them into the rig_options dict to be used for global
         usage in actions, so we can avoid having to specify the same value over
         and over between rigs and actions.
-        '''
+        """
         for opt in self.rig_wide_opts:
             if opt in self.args:
                 self.rig_options[opt] = self.args[opt]
 
     def _setup_parser(self, parser):
-        '''
+        """
         Builds the option parser based on supported actions, then appends the
         rig-specific options.
 
         Returns:
             parser: an ArgumentParser object that contains the rig-specific
                     options.
-        '''
+        """
         # Add the common rigging options here
         parser.add_argument('--foreground', action='store_true', default=False,
                             help='Run the rig in the foreground')
@@ -273,27 +273,27 @@ class BaseRig():
 
     @property
     def watching(self):
-        '''
+        """
         MUST be overridden by rigs. This should return a string describing
         what resource(s) the rig is monitoring
-        '''
+        """
         return NotImplementedError
 
     @property
     def trigger(self):
-        '''
+        """
         MUST be overridden by rigs. This should return a string containing the
         trigger event for the monitored resource.
-        '''
+        """
         return NotImplementedError
 
     @property
     def status(self, value=None):
-        '''
+        """
         Returns the current status of the rig.
 
         :param value: Unused, but passed by the listening socket
-        '''
+        """
         return {
             'id': self.id,
             'pid': str(self.pid),
@@ -305,10 +305,10 @@ class BaseRig():
 
     @property
     def info(self, value=None):
-        '''
+        """
         Returns detailed information about the rig for a more in-depth view
         than status provides
-        '''
+        """
         return {
             'id': self.id,
             'pid': str(self.pid),
@@ -351,13 +351,13 @@ class BaseRig():
             self.console.debug(msg)
 
     def set_option(self, option, value):
-        '''
+        """
         Override the rig_wide_option for OPTION with VALUE.
-        '''
+        """
         self.rig_options[option] = value
 
     def get_option(self, option):
-        '''
+        """
         Retrieve a specified option from the loaded commandline options.
 
         An invalid option returns as False, rather than raises an exception.
@@ -366,7 +366,7 @@ class BaseRig():
             str or bool - If the option has a value other than True, it is
                 returned as a string. Otherwise return True or False depending
                 on if it has a value at all.
-        '''
+        """
         if option in self.rig_options.keys() and self.rig_options[option]:
             return self.rig_options[option]
         if option in self.args.keys():
@@ -382,19 +382,19 @@ class BaseRig():
         return False
 
     def set_parser_options(self, parser):
-        '''
+        """
         This is where the rig-specific options are actually specified.
 
         Returns:
             parser - ArgumentParser (sub) parser object
-        '''
+        """
         return parser
 
     def _fmt_return(self, command, output='', success=True):
-        '''
+        """
         Formats a return value as a dict specifying the id of this rig, the
         command run, any output, and if the command was successful
-        '''
+        """
         return json.dumps({
             'id': self.id,
             'command': command,
@@ -433,13 +433,13 @@ class BaseRig():
             continue
 
     def _register_actions(self):
-        '''
+        """
         Compare the commandline options to supported actions for the rig.
 
         For any options matched against the supported actions, we initialize
         those actions to then be triggered once the rig hits the triggering
         conditions.
-        '''
+        """
         self._actions = {}
         for action in self.supported_actions:
             _act = self.supported_actions[action]
@@ -452,13 +452,13 @@ class BaseRig():
                 self._actions[action] = _action
 
     def _get_action_info(self):
-        '''
+        """
         Provide detailed information about the actions that will be taken
         when the rig is triggered
 
         Returns:
             dict of action dicts with associated information
-        '''
+        """
         acts = {}
         for action in self._actions:
             _act = self._actions[action]
@@ -470,17 +470,17 @@ class BaseRig():
         return acts
 
     def setup(self):
-        '''
+        """
         MUST be overridden by rigs subclassing BaseRig.
 
         This is where rigs will define their watcher threads.
-        '''
+        """
         raise NotImplementedError
 
     def execute(self):
-        '''
+        """
         Main entry point for rigs.
-        '''
+        """
         try:
             self.setup()
             self._register_actions()
@@ -519,7 +519,7 @@ class BaseRig():
             self._exit(1)
 
     def _create_and_monitor(self):
-        '''
+        """
         Create the threads for listening on the socket and monitoring the bits
         the rig is meant to monitor.
 
@@ -533,7 +533,7 @@ class BaseRig():
         This method may be called multiple times if the rig is configured to
         restart itself after being triggered, hence it is responsible for the
         entire creation and take down process.
-        '''
+        """
         _threads = []
         # listen on the UDS socket in one thread, spin the watcher
         # off in a separate thread
@@ -548,12 +548,12 @@ class BaseRig():
         return ret
 
     def _monitor_resource(self):
-        '''
+        """
         This is the main function in which we watch for a resource's trigger
         condition(s).
 
         This will block until the rig has self.triggered become True.
-        '''
+        """
         try:
             ret = self.start_watcher_threads()
             if ret:
@@ -570,40 +570,40 @@ class BaseRig():
 
     @property
     def manual_trigger(self):
-        '''
+        """
         Manually triggers the rig, kicking off the watcher thread
-        '''
+        """
         self.log_info('Received request to manually trigger rig.')
         self._triggered_from_cmdline = True
 
     def _watch_for_manual_trigger(self):
-        '''
+        """
         This thread will watch for a manual trigger request from the cmdline,
         and return True iff that request is made
-        '''
+        """
         while not self._triggered_from_cmdline:
             time.sleep(1)
         self.log_debug('Trigger from cmdline received. Triggering watcher')
         return True
 
     def reset_counters(self):
-        '''
+        """
         Reset whatever counters a rig uses to determine trigger state. This is
         called when a rig restarts itself, so that a previous run does not
         influence the run of the now-restarted rig.
 
         This SHOULD BE overridden by specific rigs, though if there is not some
         form of counter that the rig uses, it can be ignored.
-        '''
+        """
         pass
 
     def create_archive(self):
-        '''
+        """
         Takes the contents on the temp directory used for the rig and creates
         a tarball of them, placing the archive in /var/tmp.
 
         Later, the rig will remove the temp directory for itself.
-        '''
+        """
         if self.get_option('no_archive'):
             self.log_info('Not creating a tar archive of collected data')
             return
@@ -617,9 +617,9 @@ class BaseRig():
         return _arc_name
 
     def report_created_files(self):
-        '''
+        """
         Report all files created by all actions
-        '''
+        """
         if not self.archive_name and self.files:
             self.log_info("The following files were created for this rig: %s"
                           % ', '.join(f for f in self.files))
@@ -628,7 +628,7 @@ class BaseRig():
                           "at %s" % self.archive_name)
 
     def add_watcher_thread(self, target, args):
-        '''
+        """
         Used by rigs to define new thread(s) to start in order to monitor their
         respective resources. Each required thread should make a separate call
         to add_watcher_thread().
@@ -637,7 +637,7 @@ class BaseRig():
             target - A callable method, almost always defined by the rig
             args - Args that should be passed to the target method, if multiple
                 pass this as a tuple.
-        '''
+        """
         if not callable(target):
             raise Exception("Unable to add watcher thread. Target must be a "
                             "callable method, received %s" % target.__class__)
@@ -646,12 +646,12 @@ class BaseRig():
         self.watcher_threads.append((target, args))
 
     def start_watcher_threads(self):
-        '''
+        """
         Start the threadpool and submits the requested watcher threads as jobs.
 
         Blocks until one of the threads returns, acting as a trigger event for
         the rig
-        '''
+        """
         try:
             futures = []
             self.pool = ThreadPoolExecutor()
@@ -666,10 +666,10 @@ class BaseRig():
             self._exit(1)
 
     def trigger_actions(self):
-        '''
+        """
         This is called when a rig's monitoring condition is met. This will then
         invoke any and all actions defined by the user.
-        '''
+        """
         self._status = 'Triggered'
         self.files = []
         try:
@@ -684,11 +684,11 @@ class BaseRig():
             self.log_error("Error executing actions: %s" % err)
 
     def trigger_kdump(self):
-        '''
+        """
         If configured, kdump needs to be triggered at the end of execution.
 
         Thus, this is called after everything else.
-        '''
+        """
         if 'kdump' in self._actions.keys():
             # if we don't remove this here, we'll have a stale socket for
             # every kdump rig created
