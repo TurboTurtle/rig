@@ -398,6 +398,28 @@ Only 1, 5, and 15 are accepted values for this option, as that is what the Linux
 kernel returns loadavg data for.
 
 Default: 1
+.TP
+.B \-\-temp INTEGER
+The temperature in Celsius rig should monitor the CPU for meeting or exceeding.
+
+This option takes an integer value, though temperature data is single decimal point
+sensitive, so a temperature of 50.9 degrees will not trigger a rig that sets this
+option to 51.
+
+By default rig will monitor the first physical CPU package installed on the system.
+This may be changed via the \fB\-\-cpu-id\fR option. Note that rig will only monitor
+whole packages and not individual cores, and that package temperatures reported are
+the highest reported temperature for any core in that package.
+
+.TP
+.B \-\-cpu-id ID
+If specified, monitor this physical CPU package. By default, rig will monitor
+physical CPU package 0 - meaning the first physically installed CPU.
+
+When specifying an ID here, remember that in Linux CPU IDs are zero-indexed, so the
+first CPU will be ID 0, the second ID 1, and so forth.
+
+Default: 0
 .RE
 .TP
 .B Filesystem

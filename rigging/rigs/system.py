@@ -9,6 +9,7 @@
 # See the LICENSE file in the source distribution for further information.
 
 from rigging.rigs import BaseRig
+from warnings import catch_warnings, simplefilter
 
 import os
 import psutil
@@ -43,6 +44,10 @@ class System(BaseRig):
         parser.add_argument('--loadavg-interval', type=int, default=1,
                             choices=[1, 5, 15],
                             help='Which minute interval to watch. Default: 1')
+        parser.add_argument('--temp', type=int,
+                            help="CPU temperature in degrees Celsius")
+        parser.add_argument('--cpu-id', default=0, type=int,
+                            help="Physical CPU package ID to monitor temp for")
         return parser
 
     @property
@@ -62,6 +67,8 @@ class System(BaseRig):
             ret.append("Memory usage above %s%%" % self.get_option('memperc'))
         if self.get_option('loadavg'):
             ret.append("System loadavg above %s" % self.get_option('loadavg'))
+        if self.get_option('temp'):
+            ret.append("CPU temperature above %S" % self.get_option('temp'))
         return ', '.join(r for r in ret)
 
     def _compile_opts_as_dict(self):
@@ -99,6 +106,58 @@ class System(BaseRig):
         if self.get_option('loadavg'):
             self.add_watcher_thread(self.watch_loadavg,
                                     args=(self.get_option('loadavg')))
+        if self.get_option('temp'):
+            cpu_id = self._get_package_index(self.get_option('cpu_id'))
+            self.add_watcher_thread(self.watch_temp,
+                                    args=(self.get_option('temp'),
+                                          cpu_id))
+
+    def watch_temp(self, temp, phys_id=0):
+        """
+        Watch CPU temperature for meeting or exceeding the temperature given.
+
+        By default this will watch CPU Package 0, meaning the first physically
+        installed CPU. This may be overridden by the --cpu-id option. Please
+        note this refers _only_ to physical CPU packages, and does not support
+        individual core monitoring.
+
+        If the given phys_id does not exist, default back to CPU Package 0.
+
+        Positional arguments:
+            :param temp:        Degrees celsius to trigger on when met
+
+        Optional arguments:
+            :param phys_id:     ID of the physical CPU package to monitor as
+                                defined by --cpu-id
+        """
+        while True:
+            cur_temp = psutil.sensors_temperatures()['coretemp'][phys_id]
+            if cur_temp.current >= temp:
+                self.log_info("CPU temperature is %s C, exceeding threshold "
+                              "of %s C" % (cur_temp.current, temp))
+                return True
+            self.wait_loop()
+
+    def _get_package_index(self, phys_id):
+        """
+        Find the index in psutil's returned list of temperatures for the given
+        physical CPU package ID.
+        """
+        # squelch runtimewarnings from psutil, which are not important to
+        # our purposes here with temperature data
+        with catch_warnings():
+            simplefilter("ignore", RuntimeWarning)
+            _temps = psutil.sensors_temperatures()
+        for _temp in _temps['coretemp']:
+            # Only consider physical CPUs, not cores
+            if 'Package id' not in _temp.label:
+                continue
+            if _temp.label.split()[-1] == str(phys_id):
+                return _temps.index(_temp)
+        # If the physical ID does not exist, fallback to package 0, and log
+        self.log_warn("Requested CPU package ID %s does not exist. Using CPU "
+                      "package 0 instead" % phys_id)
+        return 0
 
     def watch_loadavg(self, threshold):
         """
