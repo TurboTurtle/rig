@@ -352,6 +352,11 @@ class BaseRig():
         if not self.detached and self.debug:
             self.console.debug(msg)
 
+    def log_warn(self, msg):
+        self.logger.warn(msg)
+        if not self.detached:
+            self.console.warn(msg)
+
     def set_option(self, option, value):
         """
         Override the rig_wide_option for OPTION with VALUE.
