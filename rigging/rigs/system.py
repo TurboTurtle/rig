@@ -153,7 +153,7 @@ class System(BaseRig):
             if 'Package id' not in _temp.label:
                 continue
             if _temp.label.split()[-1] == str(phys_id):
-                return _temps.index(_temp)
+                return _temps['coretemp'].index(_temp)
         # If the physical ID does not exist, fallback to package 0, and log
         self.log_warn("Requested CPU package ID %s does not exist. Using CPU "
                       "package 0 instead" % phys_id)
