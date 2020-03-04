@@ -25,7 +25,7 @@ __version__ = '0.1.0'
 
 
 class Rigging():
-    '''
+    """
     Main rig class
 
     All resources and subcommands are initially handled here. Each of the
@@ -36,14 +36,14 @@ class Rigging():
         parser - argparse.ArgumentParser object
         args - parsed arguments from the calling rig binary
 
-    '''
+    """
 
     def __init__(self, parser, args):
         self.parser = parser
         self.args = args
 
     def _setup_logging(self):
-        '''Setup logging to /var/log/rig/rig.log'''
+        """Setup logging to /var/log/rig/rig.log"""
         self.logger = logging.getLogger('rig')
         self.logger.setLevel(logging.DEBUG)
         hndlr = RigRotatingFileHandler('/var/log/rig/rig.log')
@@ -59,9 +59,9 @@ class Rigging():
         self.console.addHandler(ui)
 
     def _import_modules(self, modname):
-        '''
+        """
         Import helper to import all classes from a rig definition.
-        '''
+        """
         mod_short_name = modname.split('.')[2]
         module = __import__(modname, globals(), locals(), [mod_short_name])
         _modules = inspect.getmembers(module, inspect.isclass)
@@ -78,12 +78,12 @@ class Rigging():
         return modules
 
     def _load_supported_rigs(self):
-        '''
+        """
         Discover locally available resource monitor types.
 
         Monitors are added to a dict that is later iterated over to check if
         the requested monitor is one that we have available to us.
-        '''
+        """
         import rigging.rigs
         monitors = rigging.rigs
         self._supported_rigs = {}
@@ -112,16 +112,16 @@ class Rigging():
         self.console.warn(msg)
 
     def parse_rig_args(self):
-        '''
+        """
         Parse passed args from the cmdline right now, rather than waiting for
         a specific rig to do so
-        '''
+        """
         self.args = vars(self.parser.parse_args())
 
     def get_id(self):
-        '''
+        """
         Return the value of --id, or raise exception if not provided
-        '''
+        """
         self.parse_rig_args()
         if 'id' in self.args.keys() and self.args['id']:
             return self.args['id']
@@ -129,10 +129,10 @@ class Rigging():
         raise SystemExit(1)
 
     def execute(self):
-        '''
+        """
         Based on commandline invocation, setup an appropriate rig or execute a
         subcommand.
-        '''
+        """
         if self.args['subcmd'] == 'list':
             self.list_rigs()
             return 0
@@ -160,7 +160,7 @@ class Rigging():
             return 1
 
     def trigger_rig(self, rig_id):
-        '''
+        """
         Trigger a rig right now, rather than waiting for a trigger condition to
         be met.
 
@@ -169,7 +169,7 @@ class Rigging():
                 0 - success
                 1 - failed to trigger
                 2 - invalid command invocation
-        '''
+        """
         if rig_id == '-1':
             self.log_error('Error:  \'trigger\' requires a rig id')
             return 2
@@ -192,7 +192,7 @@ class Rigging():
         return 0
 
     def destroy_rig(self, rig_id):
-        '''
+        """
         Cleanly shutdown an existing rig with the given id
 
         Returns
@@ -200,7 +200,7 @@ class Rigging():
                 0 - success
                 1 - failed to destroy 1 or more rigs
                 2 - invalid command invocation
-        '''
+        """
         if rig_id == '-1':
             self.log_error("Error: 'destroy' requires a rig id or 'all'")
             return 2
@@ -231,13 +231,13 @@ class Rigging():
         return 0
 
     def list_rigs(self):
-        '''
+        """
         Lists known rigs.
         Rigs are known by delving into /var/run/rig and querying the available
         sockets.
 
         This does not return anything, but instead prints directly to console.
-        '''
+        """
         _fmt = "{id:7}{pid:7}{rig_type:8}{watch:30} {trigger:<35} {status:<10}"
         try:
             socks = os.listdir('/var/run/rig')
@@ -271,10 +271,10 @@ class Rigging():
 
 
 class RigConnection():
-    '''
+    """
     Connect to an existing rig's socket, and be able to communicate with the
     rig.
-    '''
+    """
 
     def __init__(self, socket_name):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -287,7 +287,7 @@ class RigConnection():
             raise MissingSocketError(_address)
 
     def _rig_communicate(self, command, extra=''):
-        '''
+        """
         Facilitates communicating with the rig over the socket the rig is
         listening on.
 
@@ -301,7 +301,7 @@ class RigConnection():
             A dict with the rig's ID, the command that was run, a 'success'
             boolean that indicates if the command was run successfully or not,
             and the resulting output from the command.
-        '''
+        """
         cmd = json.dumps({
             'command': command,
             'extra': extra
@@ -315,49 +315,49 @@ class RigConnection():
         return data
 
     def status(self):
-        '''
+        """
         Query the rig's status.
 
         Returns
             dict of rig's status information
-        '''
+        """
         ret = json.loads(self._rig_communicate('status').decode())
         if ret['success']:
             return ast.literal_eval(ret['result'])
         raise Exception
 
     def info(self):
-        '''
+        """
         Query detailed rig information
-        '''
+        """
         ret = json.loads(self._rig_communicate('info').decode())
         if ret['success']:
             return json.dumps(ast.literal_eval(ret['result']), indent=4)
         return ''
 
     def destroy(self):
-        '''
+        """
         Tell the rig to shutdown cleanly and remove its socket.
 
         Returns
             str matching the rig ID
-        '''
+        """
         return json.loads(self._rig_communicate('destroy').decode())
 
     def trigger(self):
-        '''
+        """
         Triggers the rig
-        '''
+        """
         return json.loads(self._rig_communicate('manual_trigger').decode())
 
 
 class RigRotatingFileHandler(RotatingFileHandler):
-    '''
+    """
     The logging module does not create parent directories for specified log
     files.
 
     This does, so we use it to create the parent directory.
-    '''
+    """
 
     def __init__(self, filename, mode='a', maxBytes=1048576, backupCount=5,
                  encoding=None, delay=0):

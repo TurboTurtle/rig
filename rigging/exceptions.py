@@ -10,9 +10,9 @@
 
 
 class CreateSocketError(Exception):
-    '''
+    """
     Raised when there is an issue with creating or using the rig's uds socket
-    '''
+    """
 
     def __init__(self, addr=''):
         message = "Cannot create socket %s" % addr
@@ -20,9 +20,9 @@ class CreateSocketError(Exception):
 
 
 class BindSocketError(Exception):
-    '''
+    """
     Raised when the socket exists, but we cannot communicate with it
-    '''
+    """
 
     def __init__(self):
         message = "Cannot communicate with rig"
@@ -30,9 +30,9 @@ class BindSocketError(Exception):
 
 
 class MissingSocketError(Exception):
-    '''
+    """
     Raised when the socket we attempted to use does not exist
-    '''
+    """
 
     def __init__(self, addr=''):
         message = "Socket %s does not exist" % addr
@@ -40,9 +40,9 @@ class MissingSocketError(Exception):
 
 
 class SocketExistsError(Exception):
-    '''
+    """
     Raised when we try to create a socket that already exists
-    '''
+    """
 
     def __init__(self, addr=''):
         message = "Socket %s already exists on filesystem" % addr
@@ -50,9 +50,9 @@ class SocketExistsError(Exception):
 
 
 class CannotConfigureRigError(Exception):
-    '''
+    """
     Raised when a rig fails to set itself up properly.
-    '''
+    """
 
     def __init__(self, msg=''):
         message = "Rig setup failed: %s" % msg
@@ -60,10 +60,10 @@ class CannotConfigureRigError(Exception):
 
 
 class DestroyRig(Exception):
-    '''
+    """
     Raised when we intentionally destroy a rig, so we can trap the exit of the
     thread pool
-    '''
+    """
 
 
 __all__ = [
