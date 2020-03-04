@@ -15,8 +15,8 @@ BuildRequires: python3-setuptools
 %description
 Rig is a utility designed to watch or monitor specific system resources (e.g.
 log files, journals, system activity, etc...) and then take specific action
-when the trigger condition is met. It's primary aim is to assist in troubleshooting
-for randomly occurring events.
+when the trigger condition is met. Its primary aim is to assist in troubleshooting
+and data collection for randomly occurring events.
 
 %prep
 %setup -q
