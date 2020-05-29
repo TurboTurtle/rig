@@ -35,9 +35,10 @@ class Tcpdump(BaseAction):
     priority = 2
     required_binaries = ('tcpdump',)
 
-    def add_action_options(self, parser):
+    @classmethod
+    def add_action_options(cls, parser):
         parser.add_argument('--tcpdump', action='store_true',
-                            help=self.enabling_opt_desc)
+                            help=cls.enabling_opt_desc)
         parser.add_argument('--filter', default=None,
                             help='Packet filter to use')
         parser.add_argument('--iface', '--interface', default='eth0',

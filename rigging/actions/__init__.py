@@ -36,8 +36,7 @@ class BaseAction():
     required_binaries = ()
     repeatable = False
 
-    def __init__(self, parser, rig):
-        self.parser = parser
+    def __init__(self, rig):
         self.rig = rig
         self.id = self.rig.id
         self.repeat_count = 0
@@ -122,7 +121,8 @@ class BaseAction():
         rc = proc.returncode
         return {'status': rc, 'stdout': stdout, 'stderr': stderr}
 
-    def add_action_options(self, parser):
+    @classmethod
+    def add_action_options(cls, parser):
         """
         This is where the action-specific options are added.
 

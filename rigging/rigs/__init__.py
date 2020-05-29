@@ -68,9 +68,6 @@ class BaseRig():
         self.rig_parser = subparser.add_parser(self.resource_name)
         self.rig_parser = self._setup_parser(self.rig_parser)
 
-        self.id = (''.join(random.choice(string.ascii_lowercase)
-                   for x in range(5)))
-
         self.supported_actions = self._load_supported_actions()
         for action in self.supported_actions:
             self.supported_actions[action].add_action_options(self.rig_parser)
@@ -86,6 +83,7 @@ class BaseRig():
 
         self._can_run = self._load_args()
         if self._can_run:
+            self.set_rig_id()
             self.created_time = datetime.strftime(datetime.now(),
                                                   '%D %H:%M:%S')
             self.rig_options = {}
@@ -96,6 +94,15 @@ class BaseRig():
             self._sock, self._sock_address = self._create_rig_socket()
             self._tmp_dir = self._create_temp_dir()
             self.files = []
+
+    def set_rig_id(self):
+        """If the --name option is given, update the rig's ID to that value.
+        """
+        if self.args['name']:
+            self.id = self.args['name']
+        else:
+            self.id = (''.join(random.choice(string.ascii_lowercase)
+                       for x in range(5)))
 
     def _exit(self, errno):
         """
@@ -222,8 +229,7 @@ class BaseRig():
                     mod = __import__(modname, globals(), locals(),
                                      [mod_short_name])
                     module = inspect.getmembers(mod, inspect.isclass)[-1]
-                    actions[module[1].action_name] = module[1](self.rig_parser,
-                                                               self)
+                    actions[module[1].action_name] = module[1]
         return actions
 
     def _load_rig_wide_options(self):
@@ -253,6 +259,8 @@ class BaseRig():
                             help='Print debug messages to console')
         parser.add_argument('--delay', type=int, default=0,
                             help='Seconds to delay running actions')
+        parser.add_argument('--name', type=str, default='',
+                            help='Specify a name for the rig')
         parser.add_argument('--no-archive', default=False, action='store_true',
                             help='Do not create a tar archive after execution')
         parser.add_argument('--restart', default=0, type=int,
@@ -451,7 +459,7 @@ class BaseRig():
         for action in self.supported_actions:
             _act = self.supported_actions[action]
             if action in self.args and self.args[_act.enabling_opt]:
-                _action = self.supported_actions[action]
+                _action = self.supported_actions[action](self)
                 _action.set_tmp_dir(self._tmp_dir)
                 loaded = _action.load(self.args)
                 if not loaded:

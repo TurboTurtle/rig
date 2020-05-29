@@ -25,9 +25,10 @@ class Kdump(BaseAction):
     enabling_opt_desc = 'Generate a vmcore when rig is triggered'
     priority = 10000  # this MUST run last in all cases
 
-    def add_action_options(self, parser):
+    @classmethod
+    def add_action_options(cls, parser):
         parser.add_argument('--kdump', action='store_true',
-                            help=self.enabling_opt_desc)
+                            help=cls.enabling_opt_desc)
         parser.add_argument('--sysrq', default=None,
                             help='set /proc/sys/kernel/sysrq to this value')
         return parser

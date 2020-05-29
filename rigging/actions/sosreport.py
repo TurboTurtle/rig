@@ -72,9 +72,10 @@ class SoSReport(BaseAction):
                            (ret['stderr'] or ret['stdout']))
         return True
 
-    def add_action_options(self, parser):
+    @classmethod
+    def add_action_options(cls, parser):
         parser.add_argument('--sosreport', action='store_true',
-                            help=self.enabling_opt_desc)
+                            help=cls.enabling_opt_desc)
         parser.add_argument('-e', '--enable-plugins', type=str,
                             help="Explicitly enable these sosreport plugins")
         parser.add_argument('-k', '--plugin-option', type=str,

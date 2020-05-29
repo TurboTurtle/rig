@@ -28,9 +28,10 @@ class Gcore(BaseAction):
     required_binaries = ('gcore',)
     repeatable = True
 
-    def add_action_options(self, parser):
+    @classmethod
+    def add_action_options(cls, parser):
         parser.add_argument('--gcore', nargs='?', action='append', default=[],
-                            help=self.enabling_opt_desc)
+                            help=cls.enabling_opt_desc)
         parser.add_argument('--all-pids', action='store_true',
                             help=('Execute over all pids found when using '
                                   'process names'))
