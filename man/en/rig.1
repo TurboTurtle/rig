@@ -46,6 +46,14 @@ should wait/sleep before updating their monitors again.
 Default: 1, meaning update and compare once every second.
 
 .TP
+.B \-\-name NAME
+Give the rig a name, rather than generating a random one at deployment.
+
+By default, rigs are given a randomly generated string as a name, which will appear
+in \fBrig info\fR output and in the rig's socket name. Using this option will use
+the provided name instead, and may be useful in distinguishing rigs when several
+are deployed at one time
+.TP
 .B \-\-no-archive
 Do not create a tar archive of the collected data after a rig has been triggered.
 
