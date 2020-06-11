@@ -33,8 +33,8 @@ class Logs(BaseRig):
             watch logfile or journal for.
     """
 
-    parser_description = ('Watch one or more log files and/or one or more '
-                          'journals for a specified log message')
+    parser_description = ('Watch one or more log files and/or journals for a '
+                          'specified log message')
 
     def set_parser_options(self, subparser):
         subparser.add_argument('--logfile', default='/var/log/messages',

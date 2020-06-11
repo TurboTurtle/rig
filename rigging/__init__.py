@@ -10,7 +10,6 @@
 
 import argparse
 import ast
-import inspect
 import json
 import logging
 import os
@@ -19,7 +18,6 @@ import socket
 
 from logging.handlers import RotatingFileHandler
 from rigging.exceptions import *
-from rigging.rigs import BaseRig
 
 __version__ = '0.1.0'
 
@@ -38,9 +36,10 @@ class Rigging():
 
     """
 
-    def __init__(self, parser, args):
+    def __init__(self, parser, args, supported_rigs=None):
         self.parser = parser
         self.args = args
+        self.supported_rigs = supported_rigs
 
     def _setup_logging(self):
         """Setup logging to /var/log/rig/rig.log"""
@@ -57,47 +56,6 @@ class Rigging():
         ui.setFormatter(logging.Formatter('%(message)s'))
         self.console.setLevel(logging.INFO)
         self.console.addHandler(ui)
-
-    def _import_modules(self, modname):
-        """
-        Import helper to import all classes from a rig definition.
-        """
-        mod_short_name = modname.split('.')[2]
-        module = __import__(modname, globals(), locals(), [mod_short_name])
-        _modules = inspect.getmembers(module, inspect.isclass)
-        modules = []
-        for mod in _modules:
-            if not isinstance(mod, list):
-                mod = [mod]
-            for _mod in mod:
-                if _mod[0] in ('Rigging', 'BaseRig'):
-                    continue
-                if not issubclass(_mod[1], BaseRig):
-                    continue
-                modules.append(_mod)
-        return modules
-
-    def _load_supported_rigs(self):
-        """
-        Discover locally available resource monitor types.
-
-        Monitors are added to a dict that is later iterated over to check if
-        the requested monitor is one that we have available to us.
-        """
-        import rigging.rigs
-        monitors = rigging.rigs
-        self._supported_rigs = {}
-        modules = []
-        for path in monitors.__path__:
-            if os.path.isdir(path):
-                for pyfile in sorted(os.listdir(path)):
-                    if not pyfile.endswith('.py') or '__' in pyfile:
-                        continue
-                    fname, ext = os.path.splitext(pyfile)
-                    _mod = "rigging.rigs.%s" % fname
-                    modules.extend(self._import_modules(_mod))
-        for mod in modules:
-            self._supported_rigs[mod[0].lower()] = mod[1]
 
     def log_error(self, msg):
         self.console.error(msg)
@@ -149,9 +107,8 @@ class Rigging():
         if self.args['subcmd'] == 'trigger':
             return self.trigger_rig(self.get_id())
         # load known resource monitors
-        self._load_supported_rigs()
-        if self.args['subcmd'] in self._supported_rigs:
-            rig = self._supported_rigs[self.args['subcmd']](self.parser)
+        if self.args['subcmd'] in self.supported_rigs:
+            rig = self.supported_rigs[self.args['subcmd']](self.parser)
             if rig._can_run:
                 return rig.execute()
         else:
