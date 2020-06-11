@@ -53,6 +53,7 @@ class SoSReport(BaseAction):
                         _opt.replace('_', '-'),
                         quote(self.get_option(_opt))
                     )
+            self.log_info("Collecting sosreport as %s" % cmd)
             ret = self.exec_cmd(cmd)
         except Exception as err:
             self.log_debug(err)
