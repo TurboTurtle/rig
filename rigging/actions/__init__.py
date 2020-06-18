@@ -122,6 +122,16 @@ class BaseAction():
         return {'status': rc, 'stdout': stdout, 'stderr': stderr}
 
     @classmethod
+    def _add_action_options(cls, parser):
+        """Add an argument group for the action to better format --help output
+        """
+        act_grp = parser.add_argument_group(
+            "%s Action Options" % cls.__name__.title()
+        )
+        cls.add_action_options(act_grp)
+        return parser
+
+    @classmethod
     def add_action_options(cls, parser):
         """
         This is where the action-specific options are added.
@@ -129,7 +139,7 @@ class BaseAction():
         Returns:
             parser - ArgumentParser (sub) parser object
         """
-        return parser
+        pass
 
     def _check_exists(self, binary):
         """

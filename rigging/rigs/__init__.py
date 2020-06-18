@@ -70,7 +70,7 @@ class BaseRig():
 
         self.supported_actions = self._load_supported_actions()
         for action in self.supported_actions:
-            self.supported_actions[action].add_action_options(self.rig_parser)
+            self.supported_actions[action]._add_action_options(self.rig_parser)
             self.parser_usage += '\t{:<15} {:>30}\n'.format(
                 self.supported_actions[action].enabling_opt,
                 self.supported_actions[action].enabling_opt_desc
@@ -253,26 +253,32 @@ class BaseRig():
                     options.
         """
         # Add the common rigging options here
-        parser.add_argument('--foreground', action='store_true', default=False,
-                            help='Run the rig in the foreground')
-        parser.add_argument('--debug', action='store_true',
-                            help='Print debug messages to console')
-        parser.add_argument('--delay', type=int, default=0,
-                            help='Seconds to delay running actions')
-        parser.add_argument('--name', type=str, default='',
-                            help='Specify a name for the rig')
-        parser.add_argument('--no-archive', default=False, action='store_true',
-                            help='Do not create a tar archive after execution')
-        parser.add_argument('--restart', default=0, type=int,
-                            help='Number of times a rig should restart itself')
-        parser.add_argument('--repeat', default=0, type=int,
-                            help=('Number of times to repeat actions that '
-                                  'support repitition'))
-        parser.add_argument('--repeat-delay', default=1, type=int,
-                            help='Seconds to delay between repeating actions')
-        parser.add_argument('--interval', default=1, type=int,
-                            help='Time to wait between rig polling intervals')
-        return self.set_parser_options(parser)
+        global_grp = parser.add_argument_group('Global Options')
+        global_grp.add_argument('--foreground', action='store_true',
+                                default=False,
+                                help='Run the rig in the foreground')
+        global_grp.add_argument('--debug', action='store_true',
+                                help='Print debug messages to console')
+        global_grp.add_argument('--delay', type=int, default=0,
+                                help='Seconds to delay running actions')
+        global_grp.add_argument('--name', type=str, default='',
+                                help='Specify a name for the rig')
+        global_grp.add_argument('--no-archive', default=False,
+                                action='store_true',
+                                help='Do not create a tar archive of results')
+        global_grp.add_argument('--restart', default=0, type=int,
+                                help='Number of times a rig should restart '
+                                     'itself')
+        global_grp.add_argument('--repeat', default=0, type=int,
+                                help=('Number of times to repeat actions that '
+                                      'support repitition'))
+        global_grp.add_argument('--repeat-delay', default=1, type=int,
+                                help='Seconds to delay between repeating '
+                                     'actions')
+        global_grp.add_argument('--interval', default=1, type=int,
+                                help='Time to wait between rig polling '
+                                     'intervals')
+        return self._set_parser_options(parser)
 
     def compile_details(self):
         try:
@@ -396,6 +402,16 @@ class BaseRig():
                 return _opt
         return False
 
+    def _set_parser_options(self, parser):
+        """Internal helper that automatically creates a new argument group
+        for each rig
+        """
+        rig_group = parser.add_argument_group(
+            "%s Rig Options" % self.__class__.__name__
+        )
+        self.set_parser_options(rig_group)
+        return parser
+
     def set_parser_options(self, parser):
         """
         This is where the rig-specific options are actually specified.
@@ -403,7 +419,7 @@ class BaseRig():
         Returns:
             parser - ArgumentParser (sub) parser object
         """
-        return parser
+        pass
 
     def _fmt_return(self, command, output='', success=True):
         """

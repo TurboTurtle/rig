@@ -21,7 +21,7 @@ class SoSReport(BaseAction):
 
     action_name = 'sosreport'
     enabling_opt = 'sosreport'
-    enabling_opt_desc = 'Generate a sosreport when triggered'
+    enabling_opt_desc = 'Generate an sosreport when triggered'
     priority = 100
     required_binaries = ('sosreport',)
     sos_opts = ('only_plugins', 'skip_plugins', 'enable_plugins',
