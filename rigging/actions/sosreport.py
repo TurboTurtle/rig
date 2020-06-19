@@ -42,9 +42,21 @@ class SoSReport(BaseAction):
                     "Potential shell-code found in option %s. Aborting rig "
                     "configuration." % _opt
                 )
+        self.configure_sos_cmd()
+        if self.get_option('initial_sos'):
+            self.log_info('Collecting initial baseline sos report, rig '
+                          'deployment will complete after report is collected')
+            initial_sos_success = self.generate_sosreport(label='initial')
+            if not initial_sos_success:
+                self.log_error('Failed to generate initial sosreport at rig '
+                               'deployment.')
+                return False
         return True
 
-    def trigger_action(self):
+    def configure_sos_cmd(self):
+        """Based on rig options and defaults, determine the sos report command
+        to run
+        """
         try:
             cmd = "%s --tmp-dir=%s" % (SOS_BIN, self.tmp_dir)
             for _opt in self.sos_opts:
@@ -53,30 +65,47 @@ class SoSReport(BaseAction):
                         _opt.replace('_', '-'),
                         quote(self.get_option(_opt))
                     )
-            self.log_info("Collecting sosreport as %s" % cmd)
+            self.sos_cmd = cmd
+        except Exception as err:
+            self.log_debug("Could not configure sos command: %s" % err)
+            raise
+
+    def generate_sosreport(self, label=None):
+        """Execute the sos command defined by this rig
+        """
+        path = 'unknown'
+        try:
+            cmd = self.sos_cmd
+            if label is not None:
+                cmd += " --label=%s" % label
             ret = self.exec_cmd(cmd)
+            if ret['status'] == 0:
+                for line in ret['stdout'].splitlines():
+                    if fnmatch.fnmatch(line, '*sosreport-*tar*'):
+                        path = line.strip()
+                if path == 'unknown':
+                    self.log_error('Could not determine path for sosreport')
+                    self.log_debug(ret['stdout'])
+                self.add_report_file(path)
+                return True
+            else:
+                self.log_error("Error during sosreport collection: %s"
+                               % ret['stderr'] or ret['stdout'])
+                return False
         except Exception as err:
             self.log_debug(err)
             return False
-        if ret['status'] == 0:
-            path = 'unknown'
-            for line in ret['stdout'].splitlines():
-                if fnmatch.fnmatch(line, '*sosreport-*tar*'):
-                    path = line.strip()
-            if path == 'unknown':
-                self.log_error('Could not determine path for sosreport')
-                self.log_debug(ret['stdout'])
-                return False
-            self.add_report_file(path)
-        else:
-            self.log_error("Error during sosreport collection: %s" %
-                           (ret['stderr'] or ret['stdout']))
-        return True
+
+    def trigger_action(self):
+        self.log_info('Generating sosreport from trigger event')
+        return self.generate_sosreport()
 
     @classmethod
     def add_action_options(cls, parser):
         parser.add_argument('--sosreport', action='store_true',
                             help=cls.enabling_opt_desc)
+        parser.add_argument('--initial-sos', action='store_true',
+                            help="Capture an sosreport at rig deployment also")
         parser.add_argument('-e', '--enable-plugins', type=str,
                             help="Explicitly enable these sosreport plugins")
         parser.add_argument('-k', '--plugin-option', type=str,
