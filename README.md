@@ -1,8 +1,6 @@
 # rig
 A lightweight, flexible, easy to use system monitoring and event handling utility
 
-**rig is currently a beta project at this time.**
-
 # Description
 rig is designed to aid system administrators and support engineers in diagnostic data collection for issues that are seemingly
 random in their occurrence, or occur at inoportune times for human intervention when collecting data about the event.
