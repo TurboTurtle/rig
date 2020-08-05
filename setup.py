@@ -22,7 +22,7 @@ setup(
                  "(GPLv2)"),
                 ],
     packages=find_packages(),
-    install_requires=['psutil', 'systemd-python'],
+    install_requires=['psutil > 5', 'systemd-python'],
     tests_require=['systemd-python'],
     scripts=['rig'],
     data_files=[
