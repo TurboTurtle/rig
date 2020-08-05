@@ -22,6 +22,8 @@ setup(
                  "(GPLv2)"),
                 ],
     packages=find_packages(),
+    install_requires=['psutil', 'systemd-python'],
+    tests_require=['systemd-python'],
     scripts=['rig'],
     data_files=[
         ('share/licenses/rig', ['LICENSE']),
