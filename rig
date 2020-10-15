@@ -73,8 +73,11 @@ if __name__ == '__main__':
 
     <subcmd> may be one of the following:
 
-        list            Get a list of current rigs
         destroy         Destroy a specified rig
+        info            Get detailed information on a deployed rig
+        list            Get a list of currently deployed rigs
+        trigger         Manually trigger a deployed rig right now
+
 
     """
 
