@@ -445,6 +445,7 @@ class BaseRig():
             self.log_debug("Received request '%s' from socket"
                            % req['command'])
             if req['command'] == 'destroy':
+                self._status = 'destroying'
                 self.log_debug("Shutting down rig")
                 ret = self._fmt_return(command='destroy')
                 conn.sendall(ret)
@@ -749,7 +750,7 @@ class BaseRig():
             pass
 
         try:
-            if self.archive_name:
+            if self.archive_name or self._status == 'destroying':
                 shutil.rmtree(self._tmp_dir)
         except Exception:
             pass

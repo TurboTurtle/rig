@@ -117,6 +117,8 @@ rigs. Note that if another entity kills the pid for the running rig, destroy wil
 fail as the socket is no longer connected to the (now killed) process. In this case
 use the \fB--force\fR option to cleanup the lingering socket.
 
+\fBAny data the rig has generated will be lost when invoking destroy.\fR
+
 .TP
 .B rig info \-i [ID]
 Get detailed information on a rig. This information will include configuration
