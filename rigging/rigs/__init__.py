@@ -84,6 +84,7 @@ class BaseRig():
         self._can_run = self._load_args()
         if self._can_run:
             self.set_rig_id()
+            self.pid = os.getpid()
             self.created_time = datetime.strftime(datetime.now(),
                                                   '%D %H:%M:%S')
             self.rig_options = {}
