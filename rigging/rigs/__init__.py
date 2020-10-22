@@ -198,13 +198,13 @@ class BaseRig():
         """
         args = self.rig_parser.parse_known_args()
         filt = ['--debug', '--foreground']
-        self.debug = '--debug' in args[1]
         unknowns = [x for x in args[1][1:] if x not in filt]
         if len(unknowns):
             print("Unknown option %s specified." %
                   unknowns[0].split('=')[0])
             return False
         self.args = vars(self.rig_parser.parse_known_args()[0])
+        self.debug = self.args['debug']
         if self.args:
             return True
         return False
@@ -347,6 +347,7 @@ class BaseRig():
         self.console = logging.LoggerAdapter(self.console, extra)
         if self.get_option('debug'):
             self.logger.setLevel(logging.DEBUG)
+            self.console.setLevel(logging.DEBUG)
         else:
             self.logger.setLevel(logging.INFO)
 
