@@ -199,7 +199,6 @@ class BaseRig():
         args = self.rig_parser.parse_known_args()
         filt = ['--debug', '--foreground']
         self.debug = '--debug' in args[1]
-        self.foreground = '--foreground' in args[1]
         unknowns = [x for x in args[1][1:] if x not in filt]
         if len(unknowns):
             print("Unknown option %s specified." %
@@ -516,7 +515,7 @@ class BaseRig():
             self.setup()
             self._register_actions()
             # detach from console
-            if not self.foreground:
+            if not self.args['foreground']:
                 print(self.id)
                 self._detach()
                 self.detached = True
