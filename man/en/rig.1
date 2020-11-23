@@ -608,7 +608,7 @@ utility, and thus can be any valid filter accepted by tcpdump.
 
 \fBFor most shells you must quote the filter string for rig to pass it correctly.\fR
 .TP
-.B \-\-size SIZE
+.B \-\-dump-size SIZE
 Limit the size of the packet capture file(s) to SIZE in MB.
 
 Default: 10
@@ -618,7 +618,7 @@ Specify the number of packet capture files to keep. If more than one (1), then
 tcpdump will rotate the packet capture file when it reaches the \fB\-\-size\fR
 value and keep CAPTURES number of files.
 
-E.G. Using a CAPTURES of 2 and a SIZE of 5, then when the rig terminates you will
+E.G. Using a CAPTURES of 2 and a DUMP-SIZE of 5, then when the rig terminates you will
 have up to 2 5MB packet captures.
 
 Default: 1 (packet capture file is replaced upon reaching SIZE limit).

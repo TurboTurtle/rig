@@ -60,7 +60,7 @@ class Tcpdump(BaseAction):
         self.loc = "%s%s.pcap" % (self.tmp_dir, name)
         cmd = ("%s %s -i %s -C %s -W %s "
                % (TCPDUMP_BIN, TCPDUMP_OPTS, self.get_option('iface'),
-                  self.get_option('size'), self.get_option('captures'))
+                  self.get_option('dump_size'), self.get_option('captures'))
                )
         cmd += "-w %s" % self.loc
         if self.get_option('filter'):
