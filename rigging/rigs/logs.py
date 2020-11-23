@@ -77,9 +77,6 @@ class Logs(BaseRig):
         check it for common errors and warn when one is found.
         """
         errmsg = ''
-        # We can't outright convert to shell-style regex, but we can at least
-        # trap the most common schism of using '*' as a match-all.
-        message = message.replace('*', '.*')
         try:
             # attempt to perform a regex match on itself. This is to catch
             # regex syntax errors early on. Note that we have to strip any of
