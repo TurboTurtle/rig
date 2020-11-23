@@ -7,6 +7,9 @@ Source0:    %{url}/archive/%{name}-%{version}.tar.gz
 License:    GPLv2
 BuildArch:  noarch
 
+Requires: python3dist(systemd-python)
+Requires: python3dist(psutil)
+
 BuildRequires: python3-devel
 BuildRequires: python3-setuptools
 BuildRequires: python3dist(systemd-python)
