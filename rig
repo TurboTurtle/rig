@@ -96,7 +96,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=desc, usage=usage,
                                      epilog=epilog)
     parser.add_argument('subcmd', help='subcommand to execute')
-    parser.add_argument('-i', '--id', help='rig id for list or destroy',
+    parser.add_argument('-i', '--id', help='rig id for info or destroy',
                         default='-1')
     parser.add_argument('--force', action='store_true',
                         help='force deletion of requested rig(s)')
