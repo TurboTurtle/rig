@@ -21,7 +21,7 @@ from rigging.exceptions import CannotConfigureRigError
 TCPDUMP_BIN = '/usr/sbin/tcpdump'
 # -Z is needed to avoid the privilege drop that happens before opening the
 # first savefile, which would result in an ENOPERM and a failed rig
-TCPDUMP_OPTS = '-Z root -s 0 -n'
+TCPDUMP_OPTS = '-Z root -n'
 
 
 class Tcpdump(BaseAction):
@@ -47,6 +47,9 @@ class Tcpdump(BaseAction):
                             help='Maximum size of packet capture in MB')
         parser.add_argument('--captures', default=1, type=int,
                             help='Number of capture files to keep')
+        parser.add_argument('--snaplen', '--snapshot-length', default=0,
+                            type=int, dest='snaplen',
+                            help='Snapshot length of packets captured')
         return parser
 
     def pre_action(self):
@@ -58,9 +61,10 @@ class Tcpdump(BaseAction):
                              _date,
                              self.get_option('iface'))
         self.loc = "%s%s.pcap" % (self.tmp_dir, name)
-        cmd = ("%s %s -i %s -C %s -W %s "
+        cmd = ("%s %s -i %s -s %s -C %s -W %s "
                % (TCPDUMP_BIN, TCPDUMP_OPTS, self.get_option('iface'),
-                  self.get_option('dump_size'), self.get_option('captures'))
+                  self.get_option('snaplen'), self.get_option('dump_size'),
+                  self.get_option('captures'))
                )
         cmd += "-w %s" % self.loc
         if self.get_option('filter'):

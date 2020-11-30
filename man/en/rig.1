@@ -608,6 +608,11 @@ utility, and thus can be any valid filter accepted by tcpdump.
 
 \fBFor most shells you must quote the filter string for rig to pass it correctly.\fR
 .TP
+.B \-\-snaplen LENGTH \-\-snapshot-length LENGTH
+Set the snapshot length for the packet capture. This will truncate captured packets
+to LENGTH bytes, which defaults to 262144 bytes. Using a value of 0 (also the default),
+will imply a LENGTH of 262144 bytes.
+.TP
 .B \-\-dump-size SIZE
 Limit the size of the packet capture file(s) to SIZE in MB.
 
