@@ -59,8 +59,17 @@ class System(BaseRig):
     def trigger(self):
         ret = []
         for conf in self.conf:
-            if self.conf[conf]:
-                ret.append("%s above %s" % (conf, self.conf[conf]))
+            if not self.conf[conf]:
+                continue
+            marker = 'above'
+            if conf in self._memory_metrics:
+                if conf in ['available', 'free']:
+                    marker = 'below'
+                _watch = "%s memory" % conf
+            elif conf in self._cpu_metrics:
+                _watch = "cpu %s" % conf
+            ret.append("%s %s %s" % (_watch, marker, self.conf[conf]))
+        print(ret)
         if self.get_option('cpuperc'):
             ret.append("CPU usage above %s%%" % self.get_option('cpuperc'))
         if self.get_option('memperc'):
