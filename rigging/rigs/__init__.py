@@ -27,7 +27,7 @@ from datetime import datetime
 from rigging.exceptions import *
 
 RIG_DIR = '/var/run/rig/'
-RIG_TMP_DIR = '/var/tmp/rig/'
+RIG_TMP_DIR_PREFIX = '/var/tmp/rig'
 
 
 class BaseRig():
@@ -179,8 +179,8 @@ class BaseRig():
         Create a temp directory for rig to use for saving created files too
         """
         try:
-            _dir = RIG_TMP_DIR + self.id + '/'
-            os.makedirs(_dir, exist_ok=True)
+            _dir = "%s.%s/" % (RIG_TMP_DIR_PREFIX, self.id)
+            os.makedirs(_dir)
             return _dir
         except OSError:
             raise CannotConfigureRigError('failed to create temp directory')
@@ -754,8 +754,8 @@ class BaseRig():
         try:
             if self.archive_name or self._status == 'destroying':
                 shutil.rmtree(self._tmp_dir)
-        except Exception:
-            pass
+        except Exception as err:
+            self.log_error("Could not remove temp dir: %s" % err)
 
     def _cleanup_socket(self):
         try:
