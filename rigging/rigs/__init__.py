@@ -521,13 +521,14 @@ class BaseRig():
         Main entry point for rigs.
         """
         try:
-            self.setup()
-            self._register_actions()
             # detach from console
             if not self.args['foreground']:
                 print(self.id)
                 self._detach()
                 self.detached = True
+            self.setup()
+            self._register_actions()
+            if self.detached:
                 for action in self._actions:
                     self._actions[action].detached = True
             ret = self._create_and_monitor()
