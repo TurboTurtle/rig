@@ -24,6 +24,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
+from rigging.actions import BaseAction
 from rigging.exceptions import *
 
 RIG_DIR = '/var/run/rig/'
@@ -228,8 +229,13 @@ class BaseRig():
                     mod_short_name = modname.split('.')[2]
                     mod = __import__(modname, globals(), locals(),
                                      [mod_short_name])
-                    module = inspect.getmembers(mod, inspect.isclass)[-1]
-                    actions[module[1].action_name] = module[1]
+                    modules = inspect.getmembers(mod, inspect.isclass)
+                    for module in modules:
+                        if module[1] == BaseAction:
+                            continue
+                        if not issubclass(module[1], BaseAction):
+                            continue
+                        actions[module[1].action_name] = module[1]
         return actions
 
     def _load_rig_wide_options(self):
