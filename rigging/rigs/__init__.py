@@ -8,7 +8,6 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-import ast
 import inspect
 import json
 import logging
@@ -21,6 +20,7 @@ import sys
 import tarfile
 import time
 
+from argparse import Action
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
@@ -29,6 +29,20 @@ from rigging.exceptions import *
 
 RIG_DIR = '/var/run/rig/'
 RIG_TMP_DIR = '/var/tmp/rig/'
+
+
+class RigExtendOption(Action):
+    """
+    Implementation of the 'extend' action from python-3.8+ for older runtimes
+
+    This will be registered as 'rigextend' to not clobber newer runtimes.
+    """
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        items = [opt for opt in values.split(',')]
+        if getattr(namespace, self.dest):
+            items += getattr(namespace, self.dest)
+        setattr(namespace, self.dest, items)
 
 
 class BaseRig():
@@ -67,6 +81,7 @@ class BaseRig():
         self.restart_count = 0
         subparser = self.parser.add_subparsers()
         self.rig_parser = subparser.add_parser(self.resource_name)
+        self.rig_parser.register('action', 'rigextend', RigExtendOption)
         self.rig_parser = self._setup_parser(self.rig_parser)
 
         self.supported_actions = self._load_supported_actions()
