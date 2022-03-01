@@ -630,6 +630,50 @@ Default: 1 (packet capture file is replaced upon reaching SIZE limit).
 .TP
 .RE
 .TP
+.B monitor
+While a rig is running, monitor various system statistics and record them for
+later review. These statistics may be file contents or command outputs.
+
+This action begins collecting information when the rig is started, and stops when
+the rig is triggered.
+
+By default, networking-centric information is monitored via commands such as netstat,
+ss, top, ps, and more. Similarly several networking-related files under /proc/ are
+monitored.
+
+The rate at which these collections take place is controlled via the \fB--interval\fR option.
+
+The \fBmonitor\fR action supports the following options:
+.RS 7
+.TP
+.B \-\-monitor
+Enables this action.
+.TP
+.B \-\-disable-monitor-defaults
+Do not monitor or collect any of the default items. This implies that all collections
+will be specified via \fB\-\-monitor-files\fR and/or \fB\-\-monitor-commands\fR.
+.TP
+.B \-\-monitor-files FILES
+A comma-delimited list of files to monitor. Monitored files have their contents copied
+to a file within the rig's archive of the same name. The contents will be separated by
+a timestamp header taken at the time of collection.
+.TP
+.B \-\-monitor-commands COMMANDS
+A comma-delimited list of commands to execute every \fB\-\-interval\fR seconds, and
+have that output saved to a file within the rig's archive. Output collections are separated
+by a timestamp header taken at the time of collection.
+
+Note that commands will need to be properly quoted if there are spaces (or other quotes)
+in the command string. For example, to run 'ps auxwww' the proper invocation would be
+\fB\-\-monitor-commands='ps auxwww'\fR.
+
+\fBIn-line shell scripting is not supported.\fR While it may be possible for such
+values to function, there are no guarantees as to those executions working properly,
+at all, not causing unintended side-effects or harm, et cetera. Dragons ahead, and
+so forth.
+.TP
+.RE
+.TP
 .B noop
 
 Does nothing - this action runs a no-op. This is ideally used for when you need
