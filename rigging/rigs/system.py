@@ -69,7 +69,6 @@ class System(BaseRig):
             elif conf in self._cpu_metrics:
                 _watch = "cpu %s" % conf
             ret.append("%s %s %s" % (_watch, marker, self.conf[conf]))
-        print(ret)
         if self.get_option('cpuperc'):
             ret.append("CPU usage above %s%%" % self.get_option('cpuperc'))
         if self.get_option('memperc'):
@@ -77,7 +76,7 @@ class System(BaseRig):
         if self.get_option('loadavg'):
             ret.append("System loadavg above %s" % self.get_option('loadavg'))
         if self.get_option('temp'):
-            ret.append("CPU temperature above %S" % self.get_option('temp'))
+            ret.append("CPU temperature above %s" % self.get_option('temp'))
         return ', '.join(r for r in ret)
 
     def _compile_opts_as_dict(self):
