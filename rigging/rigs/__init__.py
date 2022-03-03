@@ -644,10 +644,11 @@ class BaseRig():
             self.log_info('No data generated to archive for this rig.')
             return
         _arc_date = datetime.strftime(datetime.now(), '%Y-%m-%d-%H%M%S')
-        _arc_name = "/var/tmp/rig-%s-%s.tar.gz" % (self.id, _arc_date)
-        with tarfile.open(_arc_name, 'w:gz') as tar:
-            tar.add(self._tmp_dir)
-        return _arc_name
+        _arc_name = "rig-%s-%s" % (self.id, _arc_date)
+        _arc_fname = "/var/tmp/%s.tar.gz" % _arc_name
+        with tarfile.open(_arc_fname, 'w:gz') as tar:
+            tar.add(self._tmp_dir, arcname=_arc_name)
+        return _arc_fname
 
     def report_created_files(self):
         """
