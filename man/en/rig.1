@@ -543,8 +543,8 @@ for information on what values are supported.
 
 .TP
 .B sosreport
-Run a sosreport after the rig has been triggered. Select plugin enablement options
-as well as the --plugin-option from sosreport are supported by this rig.
+Run an sos report after the rig has been triggered. Select plugin enablement options
+as well as the --plugin-option from sos report are supported by this rig.
 This action should run after any time-sensitive actions otherwise specified by
 the user for a given rig.
 
@@ -558,12 +558,12 @@ Enables this action
 Specifically force the specified comma-delimited list of PLUGINS to be enabled.
 .TP
 .B \-\-plugin-option PLUGOPT
-Modify a specific plugin's runtime options. This is passed directly to sosreport
+Modify a specific plugin's runtime options. This is passed directly to sos report
 as the same --plugin-option value, which should take the form 'name.option=value'.
 For example, to increase the podman plugin timeout use
 \'--plugin-option podman.timeout=600\'.
 
-If you need to pass multiple sosreport plugin options, use a comma-delimited list
+If you need to pass multiple sos report plugin options, use a comma-delimited list
 here instead of specifying this option multiple times.
 .TP
 .B \-\-skip-plugins PLUGINS
