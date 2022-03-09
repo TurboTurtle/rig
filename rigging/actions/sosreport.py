@@ -21,7 +21,7 @@ class SoSReport(BaseAction):
 
     action_name = 'sosreport'
     enabling_opt = 'sosreport'
-    enabling_opt_desc = 'Generate an sosreport when triggered'
+    enabling_opt_desc = 'Generate an sos report when triggered'
     priority = 100
     required_binaries = ('sosreport',)
     sos_opts = ('only_plugins', 'skip_plugins', 'enable_plugins',
@@ -48,7 +48,7 @@ class SoSReport(BaseAction):
                           'deployment will complete after report is collected')
             initial_sos_success = self.generate_sosreport(label='initial')
             if not initial_sos_success:
-                self.log_error('Failed to generate initial sosreport at rig '
+                self.log_error('Failed to generate initial sos report at rig '
                                'deployment.')
                 return False
         return True
@@ -84,12 +84,12 @@ class SoSReport(BaseAction):
                     if fnmatch.fnmatch(line, '*sosreport-*tar*'):
                         path = line.strip()
                 if path == 'unknown':
-                    self.log_error('Could not determine path for sosreport')
+                    self.log_error('Could not determine path for sos report')
                     self.log_debug(ret['stdout'])
                 self.add_report_file(path)
                 return True
             else:
-                self.log_error("Error during sosreport collection: %s"
+                self.log_error("Error during sos report collection: %s"
                                % ret['stderr'] or ret['stdout'])
                 return False
         except Exception as err:
@@ -97,7 +97,7 @@ class SoSReport(BaseAction):
             return False
 
     def trigger_action(self):
-        self.log_info('Generating sosreport from trigger event')
+        self.log_info('Generating sos report from trigger event')
         return self.generate_sosreport()
 
     @classmethod
@@ -105,16 +105,16 @@ class SoSReport(BaseAction):
         parser.add_argument('--sosreport', action='store_true',
                             help=cls.enabling_opt_desc)
         parser.add_argument('--initial-sos', action='store_true',
-                            help="Capture an sosreport at rig deployment also")
+                            help="Capture an sos report when rig starts")
         parser.add_argument('-e', '--enable-plugins', type=str,
-                            help="Explicitly enable these sosreport plugins")
+                            help="Explicitly enable these sos report plugins")
         parser.add_argument('-k', '--plugin-option', type=str,
-                            help="Specify sosreport plugin options")
+                            help="Specify sos report plugin options")
         parser.add_argument('-n', '--skip-plugins', type=str,
-                            help="Skip these sosreport plugins")
+                            help="Skip these sos report plugins")
         parser.add_argument('-o', '--only-plugins', type=str,
-                            help="Only enable these sosreport plugins")
+                            help="Only enable these sos report plugins")
         return parser
 
     def action_info(self):
-        return "An sosreport from the host in %s" % self.tmp_dir
+        return "An sos report from the host in %s" % self.tmp_dir
