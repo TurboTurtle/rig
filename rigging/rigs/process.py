@@ -14,6 +14,7 @@ from rigging.exceptions import CannotConfigureRigError
 from os.path import basename
 
 import psutil
+import time
 
 
 class Process(BaseRig):
@@ -175,6 +176,22 @@ class Process(BaseRig):
         self.set_option('process', self.proc_list)
         return True
 
+    @property
+    def all_pids_are_dead(self):
+        return all([not psutil.pid_exists(p) for p in self.proc_list])
+
+    def _hold_thread(self, process, resource):
+        """
+        When a monitor thread is about to end due to a pid no longer existing,
+        instead block that thread until all pids that the rig is monitoring
+        have exited as well
+        """
+        while not self.all_pids_are_dead:
+            time.sleep(self.get_option('interval'))
+        self.log_info("%s monitor thread for pid %s exiting."
+                      % (resource, process))
+        return False
+
     def setup(self):
         """
         Create a monitoring thread for each PID discovered or provided for each
@@ -264,9 +281,8 @@ class Process(BaseRig):
                     return True
                 self.wait_loop()
             except psutil._exceptions.NoSuchProcess:
-                self.log_info("Process %s is no longer running, stopping %s "
-                              "monitor." % (process, mem_type))
-                return False
+                self.log_info("Process %s is no longer running." % process)
+                return self._hold_thread(process, "%s consumption" % mem_type)
 
     def watch_process_for_perc(self, process, limit, resource):
         """
@@ -294,6 +310,5 @@ class Process(BaseRig):
                     return True
                 self.wait_loop()
             except psutil._exceptions.NoSuchProcess:
-                self.log_info("Process %s is no longer running, stopping "
-                              "%s percentage monitor." % (process, resource))
-                return False
+                self.log_info("Process %s is no longer running." % process)
+                return self._hold_thread(process, resource)
