@@ -246,7 +246,7 @@ class Process(BaseRig):
                                   % (process, _stat, status))
                     return True
                 self.wait_loop()
-            except psutil._exceptions.NoSuchProcess:
+            except psutil.NoSuchProcess:
                 if status == '!running':
                     self.log_info("Process %s is no longer running, matching "
                                   "trigger state '%s'" % (process, status))
@@ -280,7 +280,7 @@ class Process(BaseRig):
                                   % (process, mem_type, _check, limit))
                     return True
                 self.wait_loop()
-            except psutil._exceptions.NoSuchProcess:
+            except psutil.NoSuchProcess:
                 self.log_info("Process %s is no longer running." % process)
                 return self._hold_thread(process, "%s consumption" % mem_type)
 
@@ -309,6 +309,6 @@ class Process(BaseRig):
                                   % (process, resource, _perc, limit))
                     return True
                 self.wait_loop()
-            except psutil._exceptions.NoSuchProcess:
+            except psutil.NoSuchProcess:
                 self.log_info("Process %s is no longer running." % process)
                 return self._hold_thread(process, resource)
