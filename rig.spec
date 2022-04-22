@@ -1,6 +1,6 @@
 Name:       rig
 Summary:    Monitor a system for events and trigger specific actions
-Version:    1.0
+Version:    1.1
 Release:    1%{?dist}
 Url:        https://github.com/TurboTurtle/rig
 Source0:    %{url}/archive/%{name}-%{version}.tar.gz
@@ -43,5 +43,8 @@ install -p -m644 man/en/rig.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %doc README.md
 
 %changelog
+* Fri Apr 22 2022 Jake Hunsaker <jhunsake@redhat.com> - 1.1-1
+- New upstream release
+
 * Tue Jul 28 2020 Jake Hunsaker <jhunsake@redhat.com> - 1.0-1
 - Version 1.0 release
