@@ -100,6 +100,9 @@ class Network(BaseRig):
         parser.add_argument('--icmpcode', type=str,
                             help='Match ICMP code')
 
+        parser.add_argument('--any', action="store_true",
+                            help='Any parameter triggers (default: all params)')
+
     @property
     def watching(self):
         return "Network traffic"
@@ -107,37 +110,62 @@ class Network(BaseRig):
     @property
     def trigger(self):
         triggers = []
-        for x in [ "srcip", "dstip", "srcport", "dstport", "tcpflags",
-                   "icmpcode" ]:
-            val = self.get_option(x)
-            if val:
-                triggers.append(f'{x} is {val}')
+        op_str = " or " if self.get_option('any') else " and "
+        for x, v in self._must_match.items():
+            triggers.append(f'{x} is {val}')
 
-        return " and ".join(triggers)
+        return op_str.join(triggers)
 
     def setup(self):
-        srcip = self.get_option('srcip')
-        dstip = self.get_option('dstip')
-        srcport = self.get_option('srcport')
-        dstport = self.get_option('dstport')
-        tcpflags = self.get_option('tcpflags')
-        icmpcode = self.get_option('icmpcode')
 
-        self.add_watcher_thread(target=self._read_from_socket,
-                                args=(srcip, dstip))
+        self._must_match = {
+            'srcip': self.get_option('srcip'),
+            'dstip': self.get_option('dstip'),
+            'srcport': self.get_option('srcport'),
+            'dstport': self.get_option('dstport'),
+            'tcpflags': self.get_option('tcpflags'),
+            'icmpcode': self.get_option('icmpcode'),
+        }
+
+        self._must_match = { k: v for k, v in self._must_match.items() if v }
+
+        self.add_watcher_thread(target=self._read_from_socket, args=())
 
 
     @staticmethod
     def _strmac(mac):
         return ":".join([ f"{i:02x}" for i in mac])
 
-    def _read_from_socket(self, srcip, dstip):
+    def _pkt_matches(self, pkt_attrs):
+
+        self.log_debug(f"PKT {pkt_attrs} -- MUST {self._must_match}")
+        matching_keys = {}
+
+        for k, v in self._must_match.items():
+            if k in pkt_attrs and pkt_attrs[k] == v:
+                matching_keys[k] = v
+
+        if self.get_option("any"):
+            if len(matching_keys) > 0:
+                return matching_keys
+            else:
+                return None
+
+        else:
+            if len(matching_keys) == len(self._must_match):
+                return matching_keys
+            else:
+                return None
+
+    def _read_from_socket(self):
+
         sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))
 
         while True:
             eth, addrinfo = sock.recvfrom(65535)
 
             pkt_str = ""
+            pkt_attrs = {}
 
             iface, ethtype_info, _, _, srcmac_info = addrinfo
 
@@ -168,6 +196,9 @@ class Network(BaseRig):
             ip_src = inet_ntoa(ip[12:16])
             ip_dst = inet_ntoa(ip[16:20])
 
+            pkt_attrs['srcip'] = ip_src
+            pkt_attrs['dstip'] = ip_dst
+
             # L4
 
             if ip_proto == IPPROTO_TCP:
@@ -178,6 +209,9 @@ class Network(BaseRig):
                 tcp_hdrlen = (tcp_hdrlen >> 4) * 4 # 32bit incrs
                 tcp_flags = TCP_FLAGS(tcp_flags)
 
+                pkt_attrs['srcport'] = tcp_src
+                pkt_attrs['dstport'] = tcp_dst
+
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
                              f"{str(tcp_flags).replace('TCP_FLAGS.', '')}")
@@ -185,6 +219,9 @@ class Network(BaseRig):
             elif ip_proto == IPPROTO_UDP:
                 udp = ip[ip_hdrlen:]
                 udp_src, udp_dst, udp_hdrlen, udp_cksum = unpack("!HHHH", udp[:8])
+
+                pkt_attrs['srcport'] = udp_src
+                pkt_attrs['dstport'] = udp_dst
 
             elif ip_proto == IPPROTO_ICMP:
                 icmp = ip[ip_hdrlen:]
@@ -198,11 +235,13 @@ class Network(BaseRig):
 
                 icmp_type = ICMP_TYPES(icmp_type)
 
+            
+            # AND
 
-            if srcip and ip_src == srcip:
-                self.log_info(f"Packet matching srcip {srcip} found: {pkt_str}")
+            matching_keys = self._pkt_matches(pkt_attrs)
+            if matching_keys:
+                match_str = " and ".join([ f"{k} {v}" for k, v in matching_keys.items() ])
+                self.log_info(f"Packet matching {match_str} found: {pkt_str}")
                 return True
 
-            if dstip and ip_dst == dstip:
-                self.log_info(f"Packet matching dstip {dstip} found: {pkt_str}")
-                return True
+
