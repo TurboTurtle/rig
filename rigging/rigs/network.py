@@ -65,12 +65,20 @@ class ICMP_REDIRECT(Enum):
     TOS_HOST = 3
 
 ICMP_TYPE_CODE = {
+    0: lambda x: "",
     3: ICMP_DEST_UNREACH,
     5: ICMP_REDIRECT,
+    8: lambda x: "",
 }
 
 
 class Network(BaseRig):
+    """Monitor network traffic.
+
+    Detects network traffic matching a defined IP address, port, 
+    set of TCP flags or an ICMP code.
+    """
+
     parser_description = 'Monitor network traffic.'
 
     def set_parser_options(self, parser):
@@ -94,11 +102,18 @@ class Network(BaseRig):
 
     @property
     def watching(self):
-        pass
+        return "Network traffic"
 
     @property
     def trigger(self):
-        pass
+        triggers = []
+        for x in [ "srcip", "dstip", "srcport", "dstport", "tcpflags",
+                   "icmpcode" ]:
+            val = self.get_option(x)
+            if val:
+                triggers.append(f'{x} is {val}')
+
+        return " and ".join(triggers)
 
     def setup(self):
         srcip = self.get_option('srcip')
@@ -176,13 +191,18 @@ class Network(BaseRig):
                 icmp_type, icmp_code, icmp_cksum, icmp_id, icmp_seq = \
                         unpack("!BBHHH", icmp[:8])
 
-                icmp_code = ICMP_TYPE_CODE[icmp_type](icmp_code)
+                try:
+                    icmp_code = ICMP_TYPE_CODE[icmp_type](icmp_code)
+                except:
+                    pass
+
                 icmp_type = ICMP_TYPES(icmp_type)
 
 
             if srcip and ip_src == srcip:
                 self.log_info(f"Packet matching srcip {srcip} found: {pkt_str}")
+                return True
 
             if dstip and ip_dst == dstip:
                 self.log_info(f"Packet matching dstip {dstip} found: {pkt_str}")
-
+                return True
