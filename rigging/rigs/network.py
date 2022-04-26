@@ -88,10 +88,10 @@ class Network(BaseRig):
         parser.add_argument('--dstip', type=str,
                             help='Match destination IP address')
 
-        parser.add_argument('--srcport', type=str,
+        parser.add_argument('--srcport', type=int,
                             help='Match source port/protocol')
 
-        parser.add_argument('--dstport', type=str,
+        parser.add_argument('--dstport', type=int,
                             help='Match destination port/protocol')
 
         parser.add_argument('--tcpflags', type=str,
@@ -112,7 +112,7 @@ class Network(BaseRig):
         triggers = []
         op_str = " or " if self.get_option('any') else " and "
         for x, v in self._must_match.items():
-            triggers.append(f'{x} is {val}')
+            triggers.append(f'{x} is {v}')
 
         return op_str.join(triggers)
 
@@ -236,8 +236,6 @@ class Network(BaseRig):
                 icmp_type = ICMP_TYPES(icmp_type)
 
             
-            # AND
-
             matching_keys = self._pkt_matches(pkt_attrs)
             if matching_keys:
                 match_str = " and ".join([ f"{k} {v}" for k, v in matching_keys.items() ])
