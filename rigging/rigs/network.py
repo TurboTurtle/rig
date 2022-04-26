@@ -94,8 +94,8 @@ class Network(BaseRig):
         parser.add_argument('--dstport', type=int,
                             help='Match destination port/protocol')
 
-        #parser.add_argument('--tcpflags', type=str,
-        #                    help='Match TCP flags')
+        parser.add_argument('--tcpflags', type=str,
+                            help='Match TCP flags')
 
         #parser.add_argument('--icmpcode', type=str,
         #                    help='Match ICMP code')
@@ -123,9 +123,12 @@ class Network(BaseRig):
             'dstip': self.get_option('dstip'),
             'srcport': self.get_option('srcport'),
             'dstport': self.get_option('dstport'),
-            'tcpflags': self.get_option('tcpflags'),
-            'icmpcode': self.get_option('icmpcode'),
+            #'icmpcode': self.get_option('icmpcode'),
         }
+
+        tcpflags_str = self.get_option('tcpflags')
+        self._must_match['tcpflags'] = \
+                sum([ getattr(TCP_FLAGS, x) for x in tcpflags_str.split('|') ])
 
         self._must_match = { k: v for k, v in self._must_match.items() if v }
 
