@@ -94,11 +94,11 @@ class Network(BaseRig):
         parser.add_argument('--dstport', type=int,
                             help='Match destination port/protocol')
 
-        parser.add_argument('--tcpflags', type=str,
-                            help='Match TCP flags')
+        #parser.add_argument('--tcpflags', type=str,
+        #                    help='Match TCP flags')
 
-        parser.add_argument('--icmpcode', type=str,
-                            help='Match ICMP code')
+        #parser.add_argument('--icmpcode', type=str,
+        #                    help='Match ICMP code')
 
         parser.add_argument('--any', action="store_true",
                             help='Any parameter triggers (default: all params)')
@@ -212,6 +212,8 @@ class Network(BaseRig):
                 pkt_attrs['srcport'] = tcp_src
                 pkt_attrs['dstport'] = tcp_dst
 
+                pkt_attrs["tcpflags"] = tcp_flags
+
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
                              f"{str(tcp_flags).replace('TCP_FLAGS.', '')}")
@@ -235,6 +237,8 @@ class Network(BaseRig):
 
                 icmp_type = ICMP_TYPES(icmp_type)
 
+
+            self.log_debug(pkt_str)
             
             matching_keys = self._pkt_matches(pkt_attrs)
             if matching_keys:
