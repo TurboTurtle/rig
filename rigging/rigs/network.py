@@ -25,7 +25,7 @@ class TCP_FLAGS(IntFlag):
 
 class ICMP_TYPES(Enum):
     ECHO_REPLY = 0
-    DEST_UNREACH = 3
+    DESTINATION_UNREACHABLE = 3
     REDIRECT = 5
     ECHO = 8
     ROUTER_ADVERTISMENT = 9
@@ -41,11 +41,11 @@ class ICMP_TYPES(Enum):
     TRACEROUTE = 30
 
 class ICMP_DEST_UNREACH(Enum):
-    NET_UNREACH = 0
-    HOST_UNREACH = 1
-    PROTOCOL_UNREACH = 2
-    PORT_UNREACH = 3
-    FRAG_NEEDED = 4
+    NETWORK_UNREACHABLE = 0
+    HOST_UNREACHABLE = 1
+    PROTOCOL_UNREACHABLE = 2
+    PORT_UNREACHABLE = 3
+    FRAGMENT_NEEDED = 4
     SOURCE_ROUTE_FAILED = 5
     DEST_NET_UNKNOWN = 6
     DEST_HOST_UNKNOWN = 7
@@ -97,8 +97,8 @@ class Network(BaseRig):
         parser.add_argument('--tcpflags', type=str,
                             help='Match TCP flags')
 
-        #parser.add_argument('--icmpcode', type=str,
-        #                    help='Match ICMP code')
+        parser.add_argument('--icmptype', type=str,
+                            help='Match ICMP code')
 
         parser.add_argument('--any', action="store_true",
                             help='Any parameter triggers (default: all params)')
@@ -123,12 +123,18 @@ class Network(BaseRig):
             'dstip': self.get_option('dstip'),
             'srcport': self.get_option('srcport'),
             'dstport': self.get_option('dstport'),
-            #'icmpcode': self.get_option('icmpcode'),
+            #'icmptype': self.get_option('icmpcode'),
         }
 
         tcpflags_str = self.get_option('tcpflags')
-        self._must_match['tcpflags'] = \
-                sum([ getattr(TCP_FLAGS, x) for x in tcpflags_str.split('|') ])
+        if tcpflags_str:
+            self._must_match['tcpflags'] = \
+                sum([ getattr(TCP_FLAGS, x.upper()) for x in tcpflags_str.split('|') ])
+
+        icmptype_str = self.get_option('icmptype')
+        if icmptype_str:
+            self._must_match['icmptype'] = \
+                getattr(ICMP_TYPES, icmptype_str.upper().replace('-', '_'), None)
 
         self._must_match = { k: v for k, v in self._must_match.items() if v }
 
@@ -215,7 +221,7 @@ class Network(BaseRig):
                 pkt_attrs['srcport'] = tcp_src
                 pkt_attrs['dstport'] = tcp_dst
 
-                pkt_attrs["tcpflags"] = tcp_flags
+                pkt_attrs['tcpflags'] = tcp_flags
 
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
@@ -228,6 +234,9 @@ class Network(BaseRig):
                 pkt_attrs['srcport'] = udp_src
                 pkt_attrs['dstport'] = udp_dst
 
+                pkt_str = (f"{ip_src:>15s}:{udp_src:<5d} ({eth_src}) -> "
+                             f"{ip_dst:>15s}:{udp_dst:<5d} ({eth_dst}) ")
+
             elif ip_proto == IPPROTO_ICMP:
                 icmp = ip[ip_hdrlen:]
                 icmp_type, icmp_code, icmp_cksum, icmp_id, icmp_seq = \
@@ -239,6 +248,12 @@ class Network(BaseRig):
                     pass
 
                 icmp_type = ICMP_TYPES(icmp_type)
+
+                pkt_attrs['icmptype'] = icmp_type
+
+                pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
+                             f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
+                             f"ICMP {icmp_type.name}")
 
 
             self.log_debug(pkt_str)
