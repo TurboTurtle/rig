@@ -127,15 +127,22 @@ class Network(BaseRig):
 
         tcpflags_str = self.get_option('tcpflags')
         if tcpflags_str:
-            self._must_match['tcpflags'] = \
-                sum([ getattr(TCP_FLAGS, x.upper()) for x in tcpflags_str.split('|') ])
+            tcpflags_int = sum([ getattr(TCP_FLAGS, x.upper()) \
+                                for x in tcpflags_str.split('|') ])
+
+            self._must_match['tcpflags'] = TCP_FLAGS(tcpflags_int)
 
         icmptype_str = self.get_option('icmptype')
         if icmptype_str:
             self._must_match['icmptype'] = \
                 getattr(ICMP_TYPES, icmptype_str.upper().replace('-', '_'), None)
 
+        # Remove all attributes that have no value
         self._must_match = { k: v for k, v in self._must_match.items() if v }
+
+        # No filters provided
+        if not self._must_match:
+            raise CannotConfigureRigError("Must specify at least one filter")
 
         self.add_watcher_thread(target=self._read_from_socket, args=())
 
@@ -146,12 +153,25 @@ class Network(BaseRig):
 
     def _pkt_matches(self, pkt_attrs):
 
-        self.log_debug(f"PKT {pkt_attrs} -- MUST {self._must_match}")
+        # If --any wasn't set, then all provided filters must match.
+        match_any = self.get_option("any")
+
+        self.log_debug(f"Checking PKT {pkt_attrs} -- MUST {self._must_match}")
         matching_keys = {}
 
         for k, v in self._must_match.items():
-            if k in pkt_attrs and pkt_attrs[k] == v:
+
+            if not k in pkt_attrs:
+                continue
+
+            # Match tcpflags if any of the provided flags are set
+            if isinstance(v, TCP_FLAGS) and v & pkt_attrs[k] != 0:
                 matching_keys[k] = v
+
+            # For all other keys we just compare them
+            elif pkt_attrs[k] == v:
+                matching_keys[k] = v
+
 
         if self.get_option("any"):
             if len(matching_keys) > 0:
@@ -246,9 +266,12 @@ class Network(BaseRig):
                 except:
                     pass
 
-                icmp_type = ICMP_TYPES(icmp_type)
-
-                pkt_attrs['icmptype'] = icmp_type
+                try:
+                    icmp_type = ICMP_TYPES(icmp_type)
+                    # If parsing the type raises an excp, then just ignore it.
+                    pkt_attrs['icmptype'] = icmp_type
+                except:
+                    pass
 
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
