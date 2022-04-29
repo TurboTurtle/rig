@@ -86,6 +86,12 @@ class Network(BaseRig):
         parser.add_argument('--ifname', type=str,
                             help='Match network interface')
 
+        parser.add_argument('--srcmac', type=str,
+                            help='Match source MAC address')
+
+        parser.add_argument('--dstmac', type=str,
+                            help='Match destination MAC address')
+
         parser.add_argument('--srcip', type=str,
                             help='Match source IP address')
 
@@ -123,6 +129,8 @@ class Network(BaseRig):
     def setup(self):
 
         self._must_match = {
+            'srcmac': self.get_option('srcmac'),
+            'dstmac': self.get_option('dstmac'),
             'srcip': self.get_option('srcip'),
             'dstip': self.get_option('dstip'),
             'srcport': self.get_option('srcport'),
@@ -214,6 +222,9 @@ class Network(BaseRig):
 
             iface, ethtype_info, _, _, srcmac_info = addrinfo
 
+            if ethtype_info != ETH_IPV4: # Only IPv4
+                continue
+
             if self._match_ifname and self._match_ifname != iface:
                 continue
 
@@ -223,8 +234,8 @@ class Network(BaseRig):
             eth_dst = self._strmac(eth[6:12])
             #eth_type = struct.unpack("!H", eth[12:14])[0]
 
-            if ethtype_info != ETH_IPV4: # Only IPv4
-                continue
+            pkt_attrs["srcmac"] = eth_src
+            pkt_attrs["dstmac"] = eth_dst
 
             # L3
 
