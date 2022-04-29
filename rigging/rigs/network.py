@@ -128,6 +128,8 @@ class Network(BaseRig):
 
     def setup(self):
 
+        self._match_ifname = None
+
         self._must_match = {
             'srcmac': self.get_option('srcmac'),
             'dstmac': self.get_option('dstmac'),
@@ -217,6 +219,7 @@ class Network(BaseRig):
 
             pkt_str = ""
             pkt_attrs = {}
+            payload = None
 
             iface, ethtype_info, _, _, srcmac_info = addrinfo
 
@@ -271,6 +274,8 @@ class Network(BaseRig):
 
                 pkt_attrs['tcpflags'] = tcp_flags
 
+                payload = tcp[tcp_hdrlen:]
+
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
                              f"{str(tcp_flags).replace('TCP_FLAGS.', '')}")
@@ -281,6 +286,8 @@ class Network(BaseRig):
 
                 pkt_attrs['srcport'] = udp_src
                 pkt_attrs['dstport'] = udp_dst
+
+                payload = udp[udp_hdrlen:]
 
                 pkt_str = (f"{ip_src:>15s}:{udp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{udp_dst:<5d} ({eth_dst}) ")
@@ -306,6 +313,9 @@ class Network(BaseRig):
                              f"{ip_dst:>15s} ({eth_dst}) "
                              f"ICMP {icmp_type.name}")
 
+
+            if payload:
+                print("PAYLOAD", payload)
 
             self.log_debug(pkt_str)
             
