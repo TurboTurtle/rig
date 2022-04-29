@@ -178,9 +178,6 @@ class Network(BaseRig):
 
     def _pkt_matches(self, pkt_attrs):
 
-        # If --any wasn't set, then all provided filters must match.
-        match_any = self.get_option("any")
-
         self.log_debug(f"Checking PKT {pkt_attrs} -- MUST {self._must_match}")
         matching_keys = {}
 
@@ -205,6 +202,7 @@ class Network(BaseRig):
                 return None
 
         else:
+            # If --any wasn't set, then all provided filters must match.
             if len(matching_keys) == len(self._must_match):
                 return matching_keys
             else:
