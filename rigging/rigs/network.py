@@ -9,7 +9,9 @@ from struct import unpack
 import re
 
 ETH_P_ALL = 3
-ETH_IPV4 = 0x800
+ETH_IPV4 = 0x0800
+ETH_ARP  = 0x0806
+ETH_VLAN = 0x8100
 ETH_IPV6 = 0x86dd
 
 SOL_PACKET = 263
@@ -17,6 +19,7 @@ SO_ATTACH_FILTER = 26
 
 class PayloadMatch:
     def __init__(self, regex):
+        self._regex = regex
         self._re = re.compile(regex.encode())
 
     def __eq__(self, other):
@@ -27,6 +30,9 @@ class PayloadMatch:
             return False
 
         return self._re.search(other)
+
+    def __repr__(self):
+        return self._regex
 
 class TCP_FLAGS(IntFlag):
     FIN = 1
@@ -247,10 +253,10 @@ class Network(BaseRig):
 
             iface, ethtype_info, _, _, srcmac_info = addrinfo
 
-            if ethtype_info != ETH_IPV4: # Only IPv4
+            if self._match_ifname and self._match_ifname != iface:
                 continue
 
-            if self._match_ifname and self._match_ifname != iface:
+            if ethtype_info != ETH_IPV4: # Only IPv4
                 continue
 
             # L2
@@ -306,12 +312,12 @@ class Network(BaseRig):
 
             elif ip_proto == IPPROTO_UDP:
                 udp = ip[ip_hdrlen:]
-                udp_src, udp_dst, udp_hdrlen, udp_cksum = unpack("!HHHH", udp[:8])
+                udp_src, udp_dst, udp_len, udp_cksum = unpack("!HHHH", udp[:8])
 
                 pkt_attrs['srcport'] = udp_src
                 pkt_attrs['dstport'] = udp_dst
 
-                payload = udp[udp_hdrlen:]
+                payload = udp[8:] # UDP header is fixed 8 bytes
 
                 pkt_str = (f"{ip_src:>15s}:{udp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{udp_dst:<5d} ({eth_dst}) {payload}")
