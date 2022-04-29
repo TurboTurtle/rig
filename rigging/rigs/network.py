@@ -3,7 +3,7 @@ from rigging.exceptions import CannotConfigureRigError
 from enum import Enum, IntFlag
 from socket import socket, AF_PACKET, SOCK_RAW, \
                    IPPROTO_TCP, IPPROTO_UDP, IPPROTO_ICMP, \
-                   htons, inet_ntoa
+                   htons, inet_ntoa, if_nametoindex
 from struct import unpack
 
 ETH_P_ALL = 3
@@ -82,6 +82,10 @@ class Network(BaseRig):
     parser_description = 'Monitor network traffic.'
 
     def set_parser_options(self, parser):
+
+        parser.add_argument('--ifname', type=str,
+                            help='Match network interface')
+
         parser.add_argument('--srcip', type=str,
                             help='Match source IP address')
 
@@ -125,6 +129,7 @@ class Network(BaseRig):
             'dstport': self.get_option('dstport'),
         }
 
+        # Build a TCP_FLAGS instance based on the provided flags
         tcpflags_str = self.get_option('tcpflags')
         if tcpflags_str:
             tcpflags_int = sum([ getattr(TCP_FLAGS, x.upper()) \
@@ -132,10 +137,22 @@ class Network(BaseRig):
 
             self._must_match['tcpflags'] = TCP_FLAGS(tcpflags_int)
 
+
+        # Get ICMP_TYPES instance from the provided icmp type name
         icmptype_str = self.get_option('icmptype')
         if icmptype_str:
             self._must_match['icmptype'] = \
                 getattr(ICMP_TYPES, icmptype_str.upper().replace('-', '_'), None)
+
+        
+        # Fail if the network interface doesn't exist on the system.
+        ifname = self.get_option('ifname')
+        if ifname:
+            try:
+                if_nametoindex(ifname)
+                self._match_ifname = ifname
+            except OSError:
+                raise CannotConfigureRigError(f"Interface \"{ifname}\" doesn't exist.")
 
         # Remove all attributes that have no value
         self._must_match = { k: v for k, v in self._must_match.items() if v }
@@ -196,6 +213,9 @@ class Network(BaseRig):
             pkt_attrs = {}
 
             iface, ethtype_info, _, _, srcmac_info = addrinfo
+
+            if self._match_ifname and self._match_ifname != iface:
+                continue
 
             # L2
 
