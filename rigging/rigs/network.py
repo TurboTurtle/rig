@@ -6,12 +6,27 @@ from socket import socket, AF_PACKET, SOCK_RAW, \
                    htons, inet_ntoa, if_nametoindex
 from struct import unpack
 
+import re
+
 ETH_P_ALL = 3
 ETH_IPV4 = 0x800
 ETH_IPV6 = 0x86dd
 
 SOL_PACKET = 263
 SO_ATTACH_FILTER = 26
+
+class PayloadMatch:
+    def __init__(self, regex):
+        self._re = re.compile(regex.encode())
+
+    def __eq__(self, other):
+        if not isinstance(other, bytes):
+            return False
+
+        if other == b'':
+            return False
+
+        return self._re.search(other)
 
 class TCP_FLAGS(IntFlag):
     FIN = 1
@@ -110,6 +125,10 @@ class Network(BaseRig):
         parser.add_argument('--icmptype', type=str,
                             help='Match ICMP code')
 
+        parser.add_argument('--payload', type=str,
+                            help='Match any payload string using a regular expression')
+
+
         parser.add_argument('--any', action="store_true",
                             help='Any parameter triggers (default: all params)')
 
@@ -163,6 +182,11 @@ class Network(BaseRig):
                 self._match_ifname = ifname
             except OSError:
                 raise CannotConfigureRigError(f"Interface \"{ifname}\" doesn't exist.")
+
+        # Build a comparable object if a payload regex is provided
+        payload = self.get_option('payload')
+        if payload:
+            self._must_match['payload'] = PayloadMatch(payload)
 
         # Remove all attributes that have no value
         self._must_match = { k: v for k, v in self._must_match.items() if v }
@@ -278,7 +302,7 @@ class Network(BaseRig):
 
                 pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
                              f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
-                             f"{str(tcp_flags).replace('TCP_FLAGS.', '')}")
+                             f"{str(tcp_flags).replace('TCP_FLAGS.', '')} {payload}")
 
             elif ip_proto == IPPROTO_UDP:
                 udp = ip[ip_hdrlen:]
@@ -290,7 +314,7 @@ class Network(BaseRig):
                 payload = udp[udp_hdrlen:]
 
                 pkt_str = (f"{ip_src:>15s}:{udp_src:<5d} ({eth_src}) -> "
-                             f"{ip_dst:>15s}:{udp_dst:<5d} ({eth_dst}) ")
+                             f"{ip_dst:>15s}:{udp_dst:<5d} ({eth_dst}) {payload}")
 
             elif ip_proto == IPPROTO_ICMP:
                 icmp = ip[ip_hdrlen:]
@@ -314,8 +338,7 @@ class Network(BaseRig):
                              f"ICMP {icmp_type.name}")
 
 
-            if payload:
-                print("PAYLOAD", payload)
+            pkt_attrs['payload'] = payload
 
             self.log_debug(pkt_str)
             
