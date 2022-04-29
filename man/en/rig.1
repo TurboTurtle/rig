@@ -463,6 +463,68 @@ when the filesystem's %used exceeds this value.
 Note that using this option is ultimately the same as \fB\-\-fs-size\fR as rig
 will convert the specified percentage into a raw bytes value to use for comparisons.
 .RE
+.TP
+.B Network
+
+Monitor network traffic until a packet matching the given attributes appears.
+A packet must match all the provided attributes unless \fB\-\-any\fR is set.
+
+The following options are available for the \fBnetwork\fR rig:
+.RS 7
+.TP
+.B \-\-srcip IP
+Specify the source IP address to match in the packet. Limited to IPv4 addresses.
+.TP
+.B \-\-dstip IP
+Specify the destination IP address to match in the packet. Limited to IPv4 addresses.
+.TP
+.B \-\-srcport PORT
+Specify the source port to match in the packet. It works with both UDP and TCP.
+.TP
+.B \-\-dstport PORT
+Specify the destination port to match in the packet. It works with both UDP and TCP.
+.TP
+.B \-\-tcpflags FLAG[|FLAG2...]
+For TCP traffic, specify a number of TCP flags that must be set in the packet.
+Multiple flags can be provided separated by the pipe character "|". Whenever one of
+the flags provided is found on the packet the evaluation will be true.
+
+Available TCP flags are:
+    FIN
+    SYN
+    RST
+    PSH
+    ACK
+    URG
+    ECN
+    CWR
+
+.TP
+.B \-\-icmptype ICMP-TYPE
+For ICMP traffic, specify an ICMP packet type.
+
+Available ICMP types are:
+    echo_reply
+    destination_unreachable
+    redirect
+    echo
+    router_advertisment
+    router_selection
+    time_exceeded
+    parameter_problem
+    timestamp
+    timestamp_reply
+    information_request
+    information_reply
+    address_mask_request
+    address_mask_reply
+    traceroute
+
+.TP
+.B \-\-any 
+If a packet matches any of the provided attributes then the packet will match.
+
+.RE
 
 
 .SH ACTIONS
