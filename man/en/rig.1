@@ -475,6 +475,12 @@ The following options are available for the \fBnetwork\fR rig:
 .B \-\-ifname INTERFACE_NAME
 Only traffic seen on this interface will be processed.
 .TP
+.B \-\-srcmac MAC
+Specify the source MAC address to match in the packet.
+.TP
+.B \-\-dstmac MAC
+Specify the destination MAC address to match in the packet.
+.TP
 .B \-\-srcip IP
 Specify the source IP address to match in the packet. Limited to IPv4 addresses.
 .TP
@@ -526,6 +532,10 @@ Available ICMP types are:
 .TP
 .B \-\-any 
 If a packet matches any of the provided attributes then the packet will match.
+.TP
+.B \-\-payload REGEX
+Specify a regex that will be matched against the packet payload.
+This is useful for cleartext protocols like DNS or HTTP.
 
 .RE
 
