@@ -293,8 +293,8 @@ class Network(BaseRig):
                 except:
                     pass
 
-                pkt_str = (f"{ip_src:>15s}:{tcp_src:<5d} ({eth_src}) -> "
-                             f"{ip_dst:>15s}:{tcp_dst:<5d} ({eth_dst}) "
+                pkt_str = (f"{ip_src:>15s} ({eth_src}) -> "
+                             f"{ip_dst:>15s} ({eth_dst}) "
                              f"ICMP {icmp_type.name}")
 
 
