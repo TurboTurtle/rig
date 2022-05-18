@@ -129,7 +129,7 @@ class Packet(BaseRig):
                             help='Match TCP flags')
 
         parser.add_argument('--icmptype', type=str,
-                            help='Match ICMP code')
+                            help='Match ICMP type')
 
         parser.add_argument('--payload', type=str,
                             help='Match any payload string using a regular expression')
@@ -183,7 +183,6 @@ class Packet(BaseRig):
             self._must_match['icmptype'] = \
                 getattr(ICMP_TYPES, icmptype_str.upper().replace('-', '_'), None)
 
-        
         # Fail if the network interface doesn't exist on the system.
         ifname = self.get_option('ifname')
         if ifname:
@@ -281,8 +280,6 @@ class Packet(BaseRig):
             if ip_ver != 4:
                 continue
 
-            ip_diffserv = ip[1]
-
             ip_pktlen, ip_id, ip_flags, ip_ttl, ip_proto, ip_cksum = \
                     unpack("!HHHBBH", ip[2:12])
 
@@ -331,15 +328,10 @@ class Packet(BaseRig):
                         unpack("!BBHHH", icmp[:8])
 
                 try:
-                    icmp_code = ICMP_TYPE_CODE[icmp_type](icmp_code)
-                except:
-                    pass
-
-                try:
                     icmp_type = ICMP_TYPES(icmp_type)
                     # If parsing the type raises an excp, then just ignore it.
                     pkt_attrs['icmptype'] = icmp_type
-                except:
+                except ValueError:
                     pass
 
                 pkt_str = (f"{ip_src:>15s} ({eth_src}) -> "
