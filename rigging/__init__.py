@@ -234,6 +234,7 @@ class RigConnection():
     """
 
     def __init__(self, socket_name):
+        self.name = socket_name
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         _address = "/var/run/rig/%s" % socket_name
         try:
@@ -278,10 +279,20 @@ class RigConnection():
         Returns
             dict of rig's status information
         """
-        ret = json.loads(self._rig_communicate('status').decode())
-        if ret['success']:
-            return ast.literal_eval(ret['result'])
-        raise Exception
+        try:
+            ret = json.loads(self._rig_communicate('status').decode())
+            if ret['success']:
+                return ast.literal_eval(ret['result'])
+        except Exception as err:
+            print("Error retreiving status for %s: %s" % (self.name, err))
+            return {
+                'id': self.name,
+                'pid': '',
+                'rig_type': '',
+                'watch': 'Error retrieving status',
+                'trigger': '',
+                'status': 'Unknown'
+            }
 
     def info(self):
         """
