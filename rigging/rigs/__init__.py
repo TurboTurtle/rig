@@ -77,6 +77,7 @@ class BaseRig():
         self.resource_name = self.__class__.__name__.lower()
         self.parser_usage = self.parser_usage % {'name': self.resource_name}
         self.pool = None
+        self.archive_name = None
         self.parser = parser
         self.restart_count = 0
         subparser = self.parser.add_subparsers()
@@ -484,7 +485,6 @@ class BaseRig():
                 conn.sendall(self._fmt_return(command=req['command'],
                                               output='No such attribute',
                                               success=False))
-            continue
 
     def _register_actions(self):
         """
@@ -536,13 +536,13 @@ class BaseRig():
         Main entry point for rigs.
         """
         try:
+            self.setup()
+            self._register_actions()
             # detach from console
             if not self.args['foreground']:
                 print(self.id)
                 self._detach()
                 self.detached = True
-            self.setup()
-            self._register_actions()
             if self.detached:
                 for action in self._actions:
                     self._actions[action].detached = True
