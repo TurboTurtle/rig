@@ -18,6 +18,7 @@ import string
 import socket
 import sys
 import tarfile
+import tempfile
 import time
 
 from argparse import Action
@@ -110,7 +111,7 @@ class BaseRig():
             self.log_debug("Initializing %s rig %s" %
                            (self.resource_name, self.id))
             self._sock, self._sock_address = self._create_rig_socket()
-            self._tmp_dir = self._create_temp_dir()
+            self._create_temp_dir()
             self.files = []
 
     def set_rig_id(self):
@@ -196,11 +197,11 @@ class BaseRig():
         Create a temp directory for rig to use for saving created files too
         """
         try:
-            _dir = "%s.%s/" % (RIG_TMP_DIR_PREFIX, self.id)
-            os.makedirs(_dir)
-            return _dir
-        except OSError:
-            raise CannotConfigureRigError('failed to create temp directory')
+            self._tmp_dir = tempfile.mkdtemp(prefix='rig.', dir='/var/tmp')
+        except Exception as err:
+            raise CannotConfigureRigError(
+                "failed to create temp directory: %s" % err
+            )
 
     def _load_args(self):
         """
