@@ -776,7 +776,7 @@ class BaseRig():
             pass
 
         try:
-            if self.archive_name or self._status == 'destroying':
+            if not self.get_option('no_archive'):
                 shutil.rmtree(self._tmp_dir)
         except Exception as err:
             self.log_error("Could not remove temp dir: %s" % err)
