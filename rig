@@ -10,61 +10,16 @@
 # See the LICENSE file in the source distribution for further information.
 
 import argparse
-import inspect
 import os
 import sys
 
 from rigging import Rigging
-from rigging.rigs import BaseRig
-
-
-def _import_modules(modname):
-    """
-    Import helper to import all classes from a rig definition.
-    """
-    mod_short_name = modname.split('.')[2]
-    module = __import__(modname, globals(), locals(), [mod_short_name])
-    _modules = inspect.getmembers(module, inspect.isclass)
-    modules = []
-    for mod in _modules:
-        if not isinstance(mod, list):
-            mod = [mod]
-        for _mod in mod:
-            if _mod[0] in ('Rigging', 'BaseRig'):
-                continue
-            if not issubclass(_mod[1], BaseRig):
-                continue
-            modules.append(_mod)
-    return modules
-
-
-def _load_supported_rigs():
-    """
-    Discover locally available resource monitor types.
-
-    Monitors are added to a dict that is later iterated over to check if
-    the requested monitor is one that we have available to us.
-    """
-    import rigging.rigs
-    monitors = rigging.rigs
-    _supported_rigs = {}
-    modules = []
-    for path in monitors.__path__:
-        if os.path.isdir(path):
-            for pyfile in sorted(os.listdir(path)):
-                if not pyfile.endswith('.py') or '__' in pyfile:
-                    continue
-                fname, ext = os.path.splitext(pyfile)
-                _mod = "rigging.rigs.%s" % fname
-                modules.extend(_import_modules(_mod))
-    for mod in modules:
-        _supported_rigs[mod[0].lower()] = mod[1]
-    return _supported_rigs
+from rigging.utilities import load_supported_rigs
 
 
 if __name__ == '__main__':
 
-    supported_rigs = _load_supported_rigs()
+    supported_rigs = load_supported_rigs()
 
     desc = ('Rig is used to monitor a resource for a specific trigger and then'
             ' execute a user-defined action.')
