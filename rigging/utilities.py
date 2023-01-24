@@ -11,8 +11,9 @@
 import inspect
 import os
 
+from rigging.actions import BaseAction
 from rigging.commands import RigCmd
-from rigging.rigs import BaseRig
+from rigging.monitors import BaseMonitor
 
 
 def import_modules(modname, subclass):
@@ -63,18 +64,30 @@ def load_rig_commands():
     return rig_cmds
 
 
-def load_supported_rigs():
+def load_rig_monitors():
     """
     Discover locally available resource monitor types.
 
     Monitors are added to a dict that is later iterated over to check if
     the requested monitor is one that we have available to us.
     """
-    import rigging.rigs
-    monitors = rigging.rigs
-    _supported_rigs = {}
-    modules = find_modules(monitors, 'rigging.rigs', BaseRig)
+    import rigging.monitors
+    monitors = rigging.monitors
+    _supported_monitors = {}
+    modules = find_modules(monitors, 'rigging.monitors', BaseMonitor)
     for mod in modules:
-        _supported_rigs[mod[0].lower()] = mod[1]
-    return _supported_rigs
+        _supported_monitors[mod[0].lower()] = mod[1]
+    return _supported_monitors
 
+
+def load_rig_actions():
+    """
+    Discover locally available actions
+    """
+    import rigging.actions
+    actions = rigging.actions
+    _supported_actions = {}
+    modules = find_modules(actions, 'rigging.actions', BaseAction)
+    for mod in modules:
+        _supported_actions[mod[0].lower()] = mod[1]
+    return _supported_actions
