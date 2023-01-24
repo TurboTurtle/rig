@@ -17,19 +17,15 @@ class Noop(BaseAction):
     """
 
     action_name = 'noop'
-    enabling_opt = 'noop'
-    enabling_opt_desc = 'Do nothing. Use for testing rig configurations'
-    repeatable = True
 
-    @classmethod
-    def add_action_options(cls, parser):
-        parser.add_argument('--noop', action='store_true',
-                            help=cls.enabling_opt_desc)
-        return parser
-
-    def trigger_action(self):
-        self.log_info('No-op action triggered. Doing nothing.')
+    def trigger(self):
+        self.logger.info('No-op action triggered. Doing nothing.')
         return True
 
-    def action_info(self):
-        return 'This action will generate no content'
+    def configure(self, enabled):
+        """
+        Set a dummy option to explicitly enable this action
+        """
+        if not enabled:
+            raise Exception("noop action requested but explicitly disabled")
+        return True

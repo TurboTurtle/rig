@@ -13,9 +13,9 @@ import argparse
 import os
 import sys
 
-from rigging import Rigging
 from rigging.utilities import load_rig_commands
 
+__version__ = '1.1'
 
 if __name__ == '__main__':
 
@@ -51,6 +51,8 @@ if __name__ == '__main__':
     for cmd in rig_cmds:
         cmd_subparser = subparsers.add_parser(cmd, prog=f"rig {cmd}")
         cmd_subparser.usage = f"rig {cmd} [options]"
+        if rig_cmds[cmd].__doc__:
+            cmd_subparser.usage += f"\n{rig_cmds[cmd].__doc__}\n"
         rig_cmds[cmd].add_parser_options(parser=cmd_subparser)
         cmd_subparser.set_defaults(subcmd=cmd)
 
@@ -62,9 +64,10 @@ if __name__ == '__main__':
                 if not os.getuid() == 0:
                     raise PermissionError("Command requires root privileges")
             rig = rig_cmds[args['subcmd']](args)
-            ret = rig.execute()
+            rig.execute()
         else:
             print(f"Unknown command: {args['subcmd']}")
             sys.exit(1)
     except Exception as err:
-        print(f"Error during '{args['subcmd']}' execution: {err}")
+        print(f"{err}")
+        sys.exit(1)

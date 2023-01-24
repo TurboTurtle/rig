@@ -10,6 +10,7 @@
 
 import logging
 import os
+import sys
 import tempfile
 
 from logging.handlers import RotatingFileHandler
@@ -23,8 +24,10 @@ class RigCmd():
     """
 
     parser_description = "Base rig command class, should not see this."
+    parser_usage = ''
     root_required = True
     tmpdir = None
+    name = None
 
     def __init__(self, options):
         """
@@ -41,7 +44,6 @@ class RigCmd():
         :type options:  dict
         """
         self.options = options
-
 
     @classmethod
     def add_parser_options(cls, parser):
@@ -77,6 +79,8 @@ class RigCmd():
             _flog.setFormatter(logging.Formatter(
                 '%(asctime)s::%(rig_id)s::%(levelname)s: %(message)s'))
             self.logger.addHandler(_flog)
+        self.logger = logging.LoggerAdapter(self.logger,
+                                            extra={'rig_id': self.name})
 
 
 class RigRotatingFileHandler(RotatingFileHandler):
