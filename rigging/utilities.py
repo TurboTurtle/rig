@@ -15,6 +15,15 @@ from rigging.actions import BaseAction
 from rigging.commands import RigCmd
 from rigging.monitors import BaseMonitor
 
+UNITS = {
+    'B': 1,
+    'K': 1 << 10,
+    'M': 1 << 20,
+    'G': 1 << 30,
+    'T': 1 << 40,
+    'P': 1 << 50
+}
+
 
 def import_modules(modname, subclass):
     """
@@ -91,3 +100,38 @@ def load_rig_actions():
     for mod in modules:
         _supported_actions[mod[0].lower()] = mod[1]
     return _supported_actions
+
+
+def convert_to_bytes(val):
+    """
+    Takes a human-friendly size value and parses it into a bytes value
+    """
+
+    size = val[:-1]
+    unit = val[-1]
+
+    if unit not in UNITS.keys():
+        raise ValueError(f"Unknown unit '{unit}' provided")
+
+    try:
+        size = float(size)
+    except Exception:
+        raise TypeError(f"Invalid size {size} provided")
+
+    return size * UNITS[unit]
+
+
+def convert_to_human(size):
+    """
+    Takes a size in bytes and converts it to a human-friendly string
+    """
+    try:
+        float(size)
+    except Exception:
+        return size
+
+    for suffix, _base in sorted(UNITS.items(), key=lambda x: x[1],
+                                reverse=True):
+        if size >= _base:
+            _size = round(float(size / _base), 2)
+            return f"{_size}{suffix}"
