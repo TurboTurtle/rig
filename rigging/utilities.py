@@ -76,7 +76,7 @@ def load_rig_monitors():
     _supported_monitors = {}
     modules = find_modules(monitors, 'rigging.monitors', BaseMonitor)
     for mod in modules:
-        _supported_monitors[mod[0].lower()] = mod[1]
+        _supported_monitors[mod[1].monitor_name.lower()] = mod[1]
     return _supported_monitors
 
 
