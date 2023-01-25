@@ -12,6 +12,7 @@ import os
 
 from pathlib import Path
 from rigging.monitors import BaseMonitor
+from rigging.utilities import convert_to_bytes, convert_to_human
 
 
 class Filesystem(BaseMonitor):
@@ -46,28 +47,6 @@ class Filesystem(BaseMonitor):
         if used_perc or used_size:
             self.add_monitor_thread(self.watch_fs_used, (used_perc, used_size))
 
-    def _fmt_size(self, val):
-        """Takes the size value and parses it into a bytes value
-        """
-        units = {
-            'K': 1024,
-            'M': 1048576,
-            'G': 1073741824,
-            'T': 1099511627776
-        }
-        size = val[:-1]
-        unit = val[-1]
-
-        try:
-            size = float(size)
-        except Exception:
-            raise Exception(f"Invalid size {size} provided")
-
-        if unit not in units.keys():
-            raise Exception(f"Unknown unit '{unit}' provided")
-
-        return size * units[unit]
-
     def watch_path_size(self, size):
         """
         Watch the specified path's size and trigger if it meets or exceeds the
@@ -75,8 +54,7 @@ class Filesystem(BaseMonitor):
 
         :param size: The threshold size to monitor the configured path for
         """
-        max_size = self._fmt_size(size)
-        self.logger.debug(f"max size: {max_size}")
+        max_size = convert_to_bytes(size)
         while True:
             if self.path.is_dir():
                 cur_size = sum(f.stat().st_size for f in self.path.glob('**/*')
@@ -86,8 +64,9 @@ class Filesystem(BaseMonitor):
 
             if cur_size >= max_size:
                 self.logger.info(
-                    f"Size of path {self.path.as_posix()} is {cur_size} bytes,"
-                    f" exceeding threshold of {size}."
+                    f"Size of path {self.path.as_posix()} is "
+                    f"{convert_to_human(cur_size)}, exceeding threshold of "
+                    f"{size}."
                 )
                 return True
 
@@ -108,7 +87,7 @@ class Filesystem(BaseMonitor):
         if used_perc:
             fs_max_used = (fs_size * (used_perc / 100))
         elif used_size:
-            fs_max_used = self._fmt_size(used_size)
+            fs_max_used = convert_to_bytes(used_size)
         else:
             raise Exception("Monitoring a backing filesystem requires either "
                             "'used_perc' or 'used_size' parameters")
@@ -126,8 +105,9 @@ class Filesystem(BaseMonitor):
             if current_used > fs_max_used:
                 perc = round((current_used/fs_size * 100))
                 self.logger.info(
-                    f"Used space on {self.path.as_posix()} is {current_used}B "
-                    f"({perc}%) exceeding threshold of {fs_max_used}B."
+                    f"Used space on {self.path.as_posix()} is "
+                    f"{convert_to_human(current_used)} ({perc}%) exceeding "
+                    f"threshold of {convert_to_human(fs_max_used)}."
                 )
                 return True
             self.wait_loop()
