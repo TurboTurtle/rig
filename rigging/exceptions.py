@@ -16,7 +16,7 @@ class CreateSocketError(Exception):
 
     def __init__(self, addr=''):
         message = "Cannot create socket %s" % addr
-        super(SocketException, self).__init__(message)
+        super(CreateSocketError, self).__init__(message)
 
 
 class BindSocketError(Exception):
@@ -64,6 +64,10 @@ class DestroyRig(Exception):
     Raised when we intentionally destroy a rig, so we can trap the exit of the
     thread pool
     """
+
+    def __init__(self, msg=''):
+        message = f"Destroy called on rig: {msg}"
+        super(DestroyRig, self).__init__(message)
 
 
 __all__ = [
