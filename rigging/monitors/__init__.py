@@ -12,6 +12,7 @@ import os
 import time
 
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from rigging.exceptions import DestroyRig
 
 
 class BaseMonitor():
@@ -72,6 +73,11 @@ class BaseMonitor():
             results = wait(futures, return_when=FIRST_COMPLETED)
             result = list(results[0])[0].result()
             return result
+        except DestroyRig as err:
+            self.logger.info(
+                f"Destroying rig without triggering actions due to: {err}"
+            )
+            raise
         except Exception as err:
             self.logger.error(
                 f"Exception caught for monitor {self.monitor_name}: {err}"
