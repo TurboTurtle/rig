@@ -28,9 +28,9 @@ class BaseMonitor():
 
     def __init__(self, config, logger, **kwargs):
         """
-        The initializer for any monitors should define any configurable
-        parameters that may be controlled via the yaml configuration file a
-        user will provide for rigs.
+        The initializer for any monitor will set the base configuration of the
+        rig (so, global config options) and then pass the monitor-specific
+        configuration from the rigfile to `configure()`.
         """
         self._monitor_threads = []
         self.config = config
@@ -42,6 +42,10 @@ class BaseMonitor():
         Monitors will need to override this method, and any options or tunables
         that the monitor supports or requires will need to be defined as
         parameters in the override.
+
+        Required options are easily set this way by simply making those
+        parameters required in the call to `configure()`. If there is any
+        default value set for a parameter, it is considered optional.
 
         Any validation that the monitor needs to do should also be performed
         here, and raise an Exception if there is a problem.
