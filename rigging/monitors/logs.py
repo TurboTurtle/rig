@@ -14,6 +14,7 @@ import select
 
 from rigging.monitors import BaseMonitor
 from systemd import journal
+from threading import Lock
 
 
 class Logs(BaseMonitor):
@@ -28,13 +29,19 @@ class Logs(BaseMonitor):
 
     monitor_name = 'logs'
 
-    def configure(self, message, files='/var/log/messages', journals='system'):
+    def configure(self, message, files='/var/log/messages', journals='system',
+                  count=1):
         """
         :param message: A string or python regex pattern to match
         :param files: A file or list of files to watch
         :param journals: A unit or list of units to watch
+        :param count: The number of times message must be seen before
+                      triggering
         """
         self.message = self.validate_message(message)
+        self.count = count
+        self._seen_count = 0
+        self.lock = Lock()
 
         try:
             if files is None:
@@ -142,11 +149,8 @@ class Logs(BaseMonitor):
                 if journ.process() == journal.APPEND:
                     for entry in journ:
                         if self._match_line(entry['MESSAGE']):
-                            self.logger.info(
-                                f"Logged message in journal matches pattern "
-                                f"'{self.message.pattern}'"
-                            )
-                            return True
+                            if self._check_message_count('journal'):
+                                return True
 
     def watch_file(self, filename):
         """
@@ -162,11 +166,8 @@ class Logs(BaseMonitor):
             for line in logs:
                 line = line.strip()
                 if self._match_line(line):
-                    self.logger.info(
-                        f"Logged message in {filename} matches pattern "
-                        f"'{self.message.pattern}'"
-                    )
-                    return True
+                    if self._check_message_count(filename):
+                        return True
 
     def _read_file(self, fileobj):
         """
@@ -180,3 +181,24 @@ class Logs(BaseMonitor):
                 self.wait_loop()
                 continue
             yield line
+
+    def _check_message_count(self, source):
+        """
+        Register that the configured message has been seen, and if it meets the
+        threshold for the configured count, trigger the rig
+
+        :param source: Where the logged message came from
+        :return: True if monitor should trigger the rig, else False
+        """
+        with self.lock:
+            self._seen_count += 1
+            self.logger.info(
+                f"Logged message in {source} matches pattern "
+                f"{self.message.pattern}. Message seen {self._seen_count} "
+                f"times."
+            )
+            if self._seen_count == self.count:
+                self.logger.info(f"Message seen {self._seen_count} times, "
+                                 f"matching specified count configuration.")
+                return True
+        return False
