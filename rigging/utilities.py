@@ -98,7 +98,7 @@ def load_rig_actions():
     _supported_actions = {}
     modules = find_modules(actions, 'rigging.actions', BaseAction)
     for mod in modules:
-        _supported_actions[mod[0].lower()] = mod[1]
+        _supported_actions[mod[1].action_name.lower()] = mod[1]
     return _supported_actions
 
 
