@@ -13,7 +13,6 @@ import shlex
 import shutil
 import time
 
-from rigging.exceptions import CannotConfigureRigError
 from subprocess import Popen, PIPE
 
 
@@ -64,9 +63,7 @@ class BaseAction():
 
         for binary in self.required_binaries:
             if not check_exists(binary):
-                msg = f"Required binary {binary} not found"
-                self.logger.error(msg)
-                raise CannotConfigureRigError(msg)
+                raise Exception(f"Required binary '{binary}' not found")
 
         self.configure(**kwargs)
 
@@ -193,6 +190,6 @@ class BaseAction():
         if self.action_files:
             self.logger.info(
                 f"Action {self.action_name} created files "
-                f"{', '.join(f for f in self.action_files)}"
+                f"{', '.join(f.split('/')[-1] for f in self.action_files)}"
             )
         return self.action_files
