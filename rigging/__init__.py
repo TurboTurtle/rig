@@ -243,10 +243,17 @@ class BaseRig():
 
     def start_rig(self):
         self._sock, self._sock_address = self._create_socket()
+        for action in self.actions:
+            try:
+                action.pre_action()
+            except Exception as err:
+                self.logger.error(
+                    f"Error during {action.action_name} pre-action: {err}"
+                )
+                self.logger.info('Rig terminating due to previous error')
+                self._exit(1)
         ret = self._create_and_monitor()
         if ret:
-            # JAKE: YOU ARE HERE
-            # RE-WRITE ACTIONS, THEN DO FILE HANDLING
             arc_name = self.create_archive()
             if arc_name:
                 self.logger.info(
@@ -388,10 +395,16 @@ class BaseRig():
         return _arc_fname
 
     def _cleanup_threads(self):
-        self.pool.shutdown(wait=False)
-        self.pool._threads.clear()
-        self._control_pool.shutdown(wait=False)
-        self._control_pool._threads.clear()
+        try:
+            self.pool.shutdown(wait=False)
+            self.pool._threads.clear()
+        except AttributeError:
+            pass
+        try:
+            self._control_pool.shutdown(wait=False)
+            self._control_pool._threads.clear()
+        except AttributeError:
+            pass
         thread._threads_queues.clear()
 
     def _cleanup_socket(self):
