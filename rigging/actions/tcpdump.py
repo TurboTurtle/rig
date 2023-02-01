@@ -16,7 +16,6 @@ import subprocess
 
 from pipes import quote
 from rigging.actions import BaseAction
-from rigging.exceptions import CannotConfigureRigError
 
 TCPDUMP_BIN = '/usr/sbin/tcpdump'
 # -Z is needed to avoid the privilege drop that happens before opening the
@@ -24,88 +23,140 @@ TCPDUMP_BIN = '/usr/sbin/tcpdump'
 TCPDUMP_OPTS = '-Z root -n'
 
 
-class Tcpdump(BaseAction):
+class TcpdumpAction(BaseAction):
     """
-    Start a tcpdump and stop it once the trigger condition is met
+    This action will start a packet capture via tcpdump in the background when
+    the rig is created. The packet capture will run until the rig is triggered,
+    at which point the capture will end and the resulting pcap file(s) will be
+    added to the archive created for the rig.
+
+    Users must specify the interface on which to listen. This needs to be an
+    existing interface, or 'any' which tcpdump supports to listen to all
+    interfaces at once.
+
+    This action also supports passing a tcpdump expression/filter to the
+    packet capture. See pcap-filter(7) for expression syntax.
     """
 
     action_name = 'tcpdump'
-    enabling_opt = 'tcpdump'
-    enabling_opt_desc = 'Start a tcpdump that ends when rig is triggered'
-    priority = 2
     required_binaries = ('tcpdump',)
 
-    @classmethod
-    def add_action_options(cls, parser):
-        parser.add_argument('--tcpdump', action='store_true',
-                            help=cls.enabling_opt_desc)
-        parser.add_argument('--filter', default=None,
-                            help='Packet filter to use')
-        parser.add_argument('--iface', '--interface', default='eth0',
-                            help='Interface to listen on (default eth0)')
-        parser.add_argument('--dump-size', default=10, type=int,
-                            help='Maximum size of packet capture in MB')
-        parser.add_argument('--captures', default=1, type=int,
-                            help='Number of capture files to keep')
-        parser.add_argument('--snaplen', '--snapshot-length', default=0,
-                            type=int, dest='snaplen',
-                            help='Snapshot length of packets captured')
-        return parser
+    def configure(self, interface, capture_count=1, capture_size=10,
+                  snapshot_length=0, expression=None):
+        """
+        :param interface: The interface to capture packets on
+        :param capture_count: The number of capture files to keep
+        :param capture_size: The maximum size of individual capture files
+        :param snapshot_length: Snapshot length of packets captured
+        :param expression: A filter to pass to tcpdump to only record packets
+                           matching the given criteria
+        """
+        try:
+            self.capture_count = int(capture_count)
+        except Exception:
+            raise Exception(f"'capture_count' must be integer, not "
+                            f"{capture_count.__class__}")
 
-    def pre_action(self):
-        """
-        Launch the tcpdump
-        """
+        try:
+            self.capture_size = int(capture_size)
+        except Exception:
+            raise Exception(f"'capture_size' must be integer, not "
+                            f"{capture_size.__class__}")
+
+        try:
+            self.snapshot_length = int(snapshot_length)
+        except Exception:
+            raise Exception(f"'snapshot_length' must be integer, not"
+                            f"{snapshot_length.__class__}")
+
+        self.interface = interface
+
         _date = dt.datetime.today().strftime("%d-%m-%Y-%H:%M:%S")
-        name = "%s-%s-%s" % (self.exec_cmd('hostname')['stdout'].strip(),
-                             _date,
-                             self.get_option('iface'))
-        self.loc = "%s%s.pcap" % (self.tmp_dir, name)
-        cmd = ("%s %s -i %s -s %s -C %s -W %s "
-               % (TCPDUMP_BIN, TCPDUMP_OPTS, self.get_option('iface'),
-                  self.get_option('snaplen'), self.get_option('dump_size'),
-                  self.get_option('captures'))
-               )
-        cmd += "-w %s" % self.loc
-        if self.get_option('filter'):
-            cmd += " %s" % quote(self.get_option('filter'))
-        self.log_debug("Running tcpdump as '%s'" % cmd)
-        self.devnull = open(os.devnull, 'w')
-        self.proc = subprocess.Popen(shlex.split(cmd), shell=False,
-                                     stdout=self.devnull,
-                                     stderr=subprocess.PIPE)
+        hostname = self.exec_cmd('hostname')['stdout'].strip()
+        name = f"{hostname}-{_date}-{self.interface}"
+
+        self.tcpdump_cmd = (
+            f"{TCPDUMP_BIN} {TCPDUMP_OPTS} -i {self.interface} "
+            f"-s {self.snapshot_length} -C {self.capture_size} "
+            f"-W {self.capture_count}"
+        )
+
+        if expression:
+            self.tcpdump_cmd += f" {quote(expression)}"
+
+        if self._validate_tcpdump_cmd():
+            self.outfn = f"{self.tmpdir}/{name}.pcap"
+            self.tcpdump_cmd += f" -w {self.outfn}"
+
+    def _validate_tcpdump_cmd(self):
+        """
+        Perform an initial execution of the command to verify it will actually
+        run. This allows expressions to be vetted directly by tcpdump.
+
+        :return: True if successful, else raise Exception
+        """
+        proc, devnull = self.start_tcpdump()
         try:
             # if we hit an error in the first second of execution, it means
             # tcpdump was configured incorrectly
-            stdout, stderr = self.proc.communicate(timeout=1)
+            stdout, stderr = proc.communicate(timeout=1)
             if stderr:
-                raise CannotConfigureRigError(stderr.decode('utf-8').strip())
+                raise Exception(
+                    stderr.decode('utf-8', 'ignore').strip()
+                )
+            self.logger.debug(
+                "tcpdump command validated with no errors returned"
+            )
         except subprocess.TimeoutExpired:
             pass
-        self.log_debug("Started background tcpdump on interface '%s'"
-                       % self.args['iface'])
+        except Exception as err:
+            raise Exception(
+                f"Error during validation of tcpdump command: {err}"
+            )
+        finally:
+            proc.terminate()
+            devnull.close()
+
         return True
 
-    def trigger_action(self):
-        self.log_debug("Stopping tcpdump")
+    def pre_action(self):
+        """
+        Launch the actual tcpdump packet capture in the background, so that
+        we have meaningful data throughout the life of the rig.
+        """
+        try:
+            self.proc, self.devnull = self.start_tcpdump()
+        except Exception as err:
+            raise Exception(
+                f"Error while starting background packet capture: {err}"
+            )
+
+    def start_tcpdump(self):
+        """
+        Launch a tcpdump command in the background
+        """
+
+        self.logger.debug(f"Running tcpdump as '{self.tcpdump_cmd}'")
+        devnull = open(os.devnull, 'w')
+        proc = subprocess.Popen(shlex.split(self.tcpdump_cmd), shell=False,
+                                stdout=devnull, stderr=subprocess.PIPE)
+        return proc, devnull
+
+    def trigger(self):
+        self.logger.debug("Stopping tcpdump")
         try:
             self.proc.terminate()
-            _files = glob.glob(self.loc + '*')
-            self.add_report_file(_files)
+            _files = glob.glob(self.outfn + '*')
+            for _file in _files:
+                self.add_archive_file(_file)
             self.devnull.close()
         except Exception as err:
-            self.log_error("Could not stop tcpdump: %s" % err)
+            self.logger.error(f"Could not stop tcpdump: {err}")
         return True
 
     def cleanup(self):
         try:
             self.proc.terminate()
             self.devnull.close()
-        except Exception:
-            pass
-
-    def action_info(self):
-        return "A packet capture from interface %s using filter %s" % (
-            self.get_option('iface'),
-            self.get_option('filter')
-        )
+        except Exception as err:
+            self.logger.error(f"Error during tcpdump cleanup: {err}")
