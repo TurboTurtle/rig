@@ -220,8 +220,7 @@ class BaseRig():
             )
         try:
             act = self._find_action(action)
-            _act = act(self.config, self.logger, **config)
-            _act.set_tmpdir(self.tmpdir)
+            _act = act(self.config, self.logger, self.tmpdir, **config)
             self.logger.debug(f"Action {action} configured and validated")
             self.actions.append(_act)
         except TypeError as terr:
