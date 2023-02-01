@@ -46,7 +46,7 @@ class BaseAction():
     action_name = 'Undefined'
     priority = 100
 
-    def __init__(self, config, logger, **kwargs):
+    def __init__(self, config, logger, tmpdir, **kwargs):
         """
         Here we handle global options like 'repeat' so that individual actions
         don't need to explicitly define them every time.
@@ -57,7 +57,7 @@ class BaseAction():
         self.action_files = []
         self.logger = logger
         self.config = config
-        self.tmpdir = None
+        self.tmpdir = tmpdir
         for opt in ['repeat', 'repeat_delay']:
             self.config[opt] = kwargs.pop(opt, self.config[opt])
 
@@ -66,15 +66,6 @@ class BaseAction():
                 raise Exception(f"Required binary '{binary}' not found")
 
         self.configure(**kwargs)
-
-    def set_tmpdir(self, tmpdir):
-        """
-        Set the tmpdir for the action to the same tmpdir created for the rig
-        as a whole.
-
-        :param tmpdir: The filepath for the tmpdir to use
-        """
-        self.tmpdir = tmpdir
 
     def configure(self, **kwargs):
         """
@@ -87,6 +78,18 @@ class BaseAction():
         raise NotImplementedError(
             f"Action {self.action_name} does not self-configure"
         )
+
+    def pre_action(self):
+        """
+        This method should perform any necessary initial setup for an action,
+        such as investigating host configuration or kicking off background
+        processes that should be terminated when the rig triggers (e.g. the
+        tcpdump action)
+
+        Does not need to return any specific value, but should raise exceptions
+        when the pre action cannot be completed successfully.
+        """
+        pass
 
     def post_action(self):
         """
@@ -104,8 +107,8 @@ class BaseAction():
         if the rig was successfully triggered or not, should be defined here
         instead of in `post_action()` which is only called after a successful
         call of `trigger()`.
-        :return:
         """
+        pass
 
     def trigger(self):
         """
@@ -145,6 +148,8 @@ class BaseAction():
                 f"Exception triggering action {self.action_name}: {err}"
             )
             raise
+        finally:
+            self.cleanup()
 
     def exec_cmd(self, cmd, timeout=180):
         """
