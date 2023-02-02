@@ -8,145 +8,160 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-from rigging.actions import BaseAction
-from os.path import basename, isfile
-from os import kill
-
 import psutil
 import signal
+import os
+
+from rigging.actions import BaseAction
+from rigging.utilities import get_proc_pids
 
 
-class Gcore(BaseAction):
+class GcoreAction(BaseAction):
     """
-    Capture a coredump of a running process with gcore (GDB)
+    This action will attempt to collect a coredump of a process, or multiple
+    processes, via the gcore utility provided by GDB.
+
+    Users may provide a single process or a list of processes, as either PIDs
+    or process names. Names will attempt to be converted to PIDs during rig
+    setup.
+
+    If the 'freeze' parameter is set to true, this action will send a SIGSTOP
+    to each process before attempting to generate the coredump, and then send a
+    SIGCONT after the attempt is complete.
+
+    This action is repeatable, so multiple coredumps can be generated for the
+    same process if desired.
     """
 
     action_name = 'gcore'
-    enabling_opt = 'gcore'
-    enabling_opt_desc = 'Capture a coredump of a running process'
     priority = 1
     required_binaries = ('gcore',)
     repeatable = True
 
-    @classmethod
-    def add_action_options(cls, parser):
-        parser.add_argument('--gcore', nargs='?', action='append', default=[],
-                            help=cls.enabling_opt_desc)
-        parser.add_argument('--all-pids', action='store_true',
-                            help=('Execute over all pids found when using '
-                                  'process names'))
-        parser.add_argument('--freeze', action='store_true',
-                            help=('Freeze the process before core dumping, '
-                                  'then thaw after completion'))
-        return parser
+    def configure(self, procs, freeze=False):
+        """
+        :param procs: A process or list of processes to collect a core dump of
+        :param freeze: Freeze the process before core dumping, then thaw after
+                       a core has been collected
+        """
+        self.procs = {}
+        if isinstance(procs, str | int):
+            procs = [procs]
 
-    def _get_pid_from_name(self, pname):
-        """
-        Find the PID(s) associated with the given process name
-        """
-        _procs = []
-        filt = ['name', 'exe', 'cmdline', 'pid']
-        for proc in psutil.process_iter(attrs=filt):
-            if (proc.info['name'] == pname or
-                    proc.info['exe'] and basename(proc.info['exe']) == pname or
-                    proc.info['cmdline'] and proc.info['cmdline'][0] == pname):
-                _procs.append(proc.info['pid'])
-        if len(_procs) > 1 and not (self.get_option('all') or
-                                    self.get_option('all_pids')):
-            msg = ("Multiple PIDs found for process '%s', use --all to watch "
-                   "all PIDs" % pname)
-            self.log_error(msg)
-            raise Exception
-        return _procs
+        if isinstance(procs, list):
+            for pid in procs:
+                try:
+                    int(pid)
+                    self.procs[pid] = [pid]
+                except Exception:
+                    self.procs[pid] = get_proc_pids([pid])
+        else:
+            raise Exception(f"'procs' must be given as string, integer, or "
+                            f"list, not {procs.__class__}")
 
-    def pre_action(self):
-        """
-        Handle both process names and specific pids in command line args.
+        if not self.procs:
+            raise Exception(
+                f"No PIDs found matching procs '{', '.join(p for p in procs)}'"
+            )
 
-        If a PID is supplied, the core name will be core.$pid. If a process
-        name is provided, the core name will be core.$name.$pid
-        """
-        self.pid_list = []
-        # the collected list of requested pids, to be filled later
-        procs = []
-        # the raw commandline value(s) for --gcore
-        _pid = self.get_option('gcore')
-        for _p in _pid:
-            if _p is None:
-                if not self.get_option('process'):
-                    msg = ('gcore action must be given a pid or process name, '
-                           'or be used with the \'process\' rig type for no'
-                           'value')
-                    self.log_error(msg)
-                    return False
-                procs.extend(self.get_option('process'))
-            else:
-                procs.extend(_p.split(','))
-        # actually verify the pids derived from the command line options
-        for pid in procs:
-            try:
-                self.pid_list.append((int(pid), ''))
-            except ValueError:
-                # we were handed a process name, get the pid of it
-                proc_pids = self._get_pid_from_name(pid)
-                for proc in proc_pids:
-                    self.pid_list.append((int(proc), pid))
-        msg = ("Determined pid list to collect coredumps for to be: %s"
-               % ','.join(str(p[0]) for p in self.pid_list))
-        self.log_debug(msg)
-        return True
+        _pids = []
+        for _procs in self.procs.values():
+            _pids.extend(_procs)
+
+        self.logger.debug(
+            f"PID list for generating core dumps determined to be: "
+            f"{', '.join(str(p) for p in _pids)}"
+        )
+        self.freeze = freeze
 
     def freeze_pid(self, pid):
         """
         Send a SIGSTOP to the specified pid
         """
-        if self.get_option('freeze'):
-            self.log_debug("Freezing pid %s" % pid)
-            try:
-                kill(pid, signal.SIGSTOP)
-                return True
-            except Exception as err:
-                self.log_error("Could not send SIGSTOP to %s: %s" % (pid, err))
+        self.logger.info(f"Freezing pid {pid}")
+        try:
+            os.kill(pid, signal.SIGSTOP)
+            return True
+        except Exception as err:
+            self.logger.error(f"Could not send SIGSTOP to {pid}: {err}")
         return False
 
     def thaw_pid(self, pid):
         """
         Send a SIGCONT to the specified pid
         """
-        self.log_debug("Thawing pid %s" % pid)
+        self.logger.info(f"Thawing pid {pid}")
         try:
-            kill(pid, signal.SIGCONT)
+            os.kill(pid, signal.SIGCONT)
+            return True
         except Exception as err:
-            self.log_error("Could not send SIGCONT to %s: %s" % (pid, err))
+            self.logger.error(f"Could not send SIGCONT to {pid}: {err}")
+        return False
 
-    def trigger_action(self):
-        for pid in self.pid_list:
-            _frozen = self.freeze_pid(int(pid[0]))
-            _loc = self.tmp_dir + 'core'
-            if pid[1]:
-                _loc += ".%s" % pid[1]
-            if not psutil.pid_exists(int(pid[0])):
-                self.log_error("Cannot collect core for pid %s - pid no "
-                               "longer exists" % pid[0])
-                continue
-            if self.repeat_count:
-                _loc = _loc.replace('core', "core-%s" % self.repeat_count)
-            self.log_debug("Collecting gcore of %s at %s" % (pid[0], _loc))
-            try:
-                ret = self.exec_cmd("gcore -o %s %s" % (_loc, pid[0]))
-                if ret['status'] == 0:
-                    if isfile(_loc + '.%s' % pid[0]):
-                        fname = _loc + '.%s' % pid[0]
-                    else:
-                        fname = ret['stdout'].splitlines()[-2].split()[-1]
-                    self.add_report_file(fname)
-                if _frozen:
-                    self.thaw_pid(int(pid[0]))
-            except Exception as err:
-                self.log_error("Error collecting coredump of %s: %s"
-                               % (pid[0], err))
-        return True
+    def trigger(self):
+        for proc in self.procs:
+            for pid in self.procs[proc]:
+                if not psutil.pid_exists(int(pid)):
+                    self.logger.error(
+                        f"Cannot collect coredump for pid {pid} - process no "
+                        f"longer exists"
+                    )
+                    continue
 
-    def action_info(self,):
-        return ("A coredump for each of the following PIDs: %s"
-                % ', '.join(str(p[0]) for p in self.pid_list))
+                if str(proc) == str(pid):
+                    _name = os.path.join(self.tmpdir,
+                                         f"core-{self.repeat_count}")
+                else:
+                    _name = os.path.join(self.tmpdir,
+                                         f"core-{self.repeat_count}.{proc}")
+
+                self._collect_coredump(pid, _name)
+
+    def _collect_coredump(self, pid, filename):
+        """
+        Perform the gcore command execution to generate a coredump for the
+        given pid.
+
+        :param pid: The PID or name of the process to coredump, if given a name
+                    action will match _all_ PIDs with that command name
+        :param filename: The filename to write the coredump to, which will be
+                         suffixed with '.$pid'
+        :return: True
+        """
+
+        fname = f"{filename}.{pid}"
+
+        _frozen = False
+        if self.freeze:
+            _frozen = self.freeze_pid(pid)
+
+        self.logger.debug(f"Collecting coredump of {pid} at {fname}")
+        ret = self.exec_cmd(f"gcore -o {filename} {pid}")
+        if ret['status'] == 0:
+            if os.path.isfile(fname):
+                self.add_archive_file(fname)
+            else:
+                self.logger.info(
+                    f"Coredump not generated at expected location, attempting "
+                    f"to determine core filename"
+                )
+                _fname = ret['stdout'].splitlines()[-2].split()[-1]
+                if os.path.isfile(_fname):
+                    self.logger.info(
+                        f"Coredump {_fname} found. Adding to archive"
+                    )
+                    self.add_archive_file(_fname)
+                else:
+                    self.logger.error(
+                        f"Coredump not generated at expected location, and "
+                        f"could not determine an alternative location"
+                    )
+        else:
+            self.logger.error(
+                f"Error collecting coredump via gcore. See debug logs "
+                f"for details"
+            )
+            self.logger.debug(f"gcore output: {ret['stdout']}")
+
+        if _frozen:
+            self.thaw_pid(pid)
