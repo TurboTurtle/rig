@@ -40,6 +40,7 @@ class TcpdumpAction(BaseAction):
 
     action_name = 'tcpdump'
     required_binaries = ('tcpdump',)
+    priority = 2
 
     def configure(self, interface, capture_count=1, capture_size=10,
                   snapshot_length=0, expression=None):
