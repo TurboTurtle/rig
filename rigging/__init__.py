@@ -54,6 +54,7 @@ class BaseRig():
         self.tmpdir = self.config['tmpdir']
         self.name = self.config['name']
         self._triggered_from_cmdline = False
+        self.kdump_configured = False
 
     def _extrapolate_rig_defaults(self, config):
         _defaults = {
@@ -223,6 +224,8 @@ class BaseRig():
             _act = act(self.config, self.logger, self.tmpdir, **config)
             self.logger.debug(f"Action {action} configured and validated")
             self.actions.append(_act)
+            if _act.action_name == 'kdump':
+                self.kdump_configured = True
         except TypeError as terr:
             if 'required positional argument' in terr.args[0]:
                 _missing = terr.args[0].split(': ')[-1]
@@ -260,6 +263,14 @@ class BaseRig():
                     f"{arc_name}"
                 )
         self._cleanup_threads()
+        if self.kdump_configured:
+            self.logger.info(
+                'Kdump action has been configured, please note that rig '
+                'archive will not contain generated vmcore'
+            )
+            for _act in self.actions:
+                if _act.action_name == 'kdump':
+                    _act.trigger()
         self.logger.info(f"Rig {self.name} terminating")
         self._exit(0)
 
@@ -274,6 +285,10 @@ class BaseRig():
             self.logger.info('Beginning triggering of actions')
             for action in sorted(self.actions, key=lambda x: x.priority):
                 if action.action_name == 'kdump':
+                    self.logger.info(
+                        'Skipping action kdump until rig has otherwise '
+                        'completed all actions and generated its archive'
+                    )
                     continue
                 self.logger.debug(f"Triggering action {action.action_name}")
                 action.trigger_action()
