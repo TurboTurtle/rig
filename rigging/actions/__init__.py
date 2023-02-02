@@ -45,6 +45,7 @@ class BaseAction():
     required_binaries = ()
     action_name = 'Undefined'
     priority = 100
+    repeatable = False
 
     def __init__(self, config, logger, tmpdir, **kwargs):
         """
@@ -129,7 +130,7 @@ class BaseAction():
         repeat_count = 0
         try:
             self.trigger()
-            if self.config['repeat']:
+            if self.config['repeat'] and self.repeatable:
                 while repeat_count < self.config['repeat']:
                     # sleep here instead of after the trigger so that the first
                     # repeat is also delayed from the initial execution.
