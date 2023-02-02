@@ -127,18 +127,18 @@ class BaseAction():
 
         :return: True if successful, else raise Exception
         """
-        repeat_count = 0
+        self.repeat_count = 0
         try:
             self.trigger()
             if self.config['repeat'] and self.repeatable:
-                while repeat_count < self.config['repeat']:
+                while self.repeat_count < self.config['repeat']:
                     # sleep here instead of after the trigger so that the first
                     # repeat is also delayed from the initial execution.
                     time.sleep(self.config['repeat_delay'])
-                    repeat_count += 1
+                    self.repeat_count += 1
                     self.logger.info(
                         f"Triggering action {self.action_name} again. Repeat "
-                        f"count is now {repeat_count}. Will repeat "
+                        f"count is now {self.repeat_count}. Will repeat "
                         f"{self.config['repeat']} times total"
                     )
                     self.trigger()
