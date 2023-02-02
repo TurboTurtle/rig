@@ -10,6 +10,8 @@
 
 import inspect
 import os
+import psutil
+import re
 
 from rigging.actions import BaseAction
 from rigging.commands import RigCmd
@@ -135,3 +137,42 @@ def convert_to_human(size):
         if size >= _base:
             _size = round(float(size / _base), 2)
             return f"{_size}{suffix}"
+
+
+def get_proc_pids(proc_list):
+    """
+    Convert any given process names/commands to relevant PIDs, as PIDs are
+    what we need to use to monitor given process(es).
+
+    :param proc_list: A list of process names, commands, or pre-determined
+                      PIDs.
+    :return: A list of all PIDs
+    """
+    _pids = []
+    filt = ['name', 'exe', 'cmdline', 'pid']
+    _running_procs = psutil.process_iter(attrs=filt)
+    for proc in proc_list:
+        if not proc:
+            continue
+        try:
+            for _each in _running_procs:
+                try:
+                    if _each.pid == int(proc):
+                        _pids.append(int(proc))
+                except Exception:
+                    # we have a process/command name
+                    _preg = re.compile(proc)
+                    _stats = [
+                        _each.info.get('name', ''),
+                        _each.info.get('exe', ''),
+                    ]
+                    if _each.info.get('cmdline'):
+                        _stats.append(
+                            os.path.basename(_each.info.get('cmdline')[0])
+                        )
+                    if any(_preg.match(_p) for _p in _stats if _p):
+                        _pids.append(_each.pid)
+        except Exception as err:
+            raise Exception(f"Error getting process pids: {err}")
+    _pids = list(set(_pids))
+    return _pids
