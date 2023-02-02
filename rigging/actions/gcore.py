@@ -142,8 +142,8 @@ class GcoreAction(BaseAction):
                 self.add_archive_file(fname)
             else:
                 self.logger.info(
-                    f"Coredump not generated at expected location, attempting "
-                    f"to determine core filename"
+                    "Coredump not generated at expected location, attempting "
+                    "to determine core filename"
                 )
                 _fname = ret['stdout'].splitlines()[-2].split()[-1]
                 if os.path.isfile(_fname):
@@ -153,13 +153,13 @@ class GcoreAction(BaseAction):
                     self.add_archive_file(_fname)
                 else:
                     self.logger.error(
-                        f"Coredump not generated at expected location, and "
-                        f"could not determine an alternative location"
+                        "Coredump not generated at expected location, and "
+                        "could not determine an alternative location"
                     )
         else:
             self.logger.error(
-                f"Error collecting coredump via gcore. See debug logs "
-                f"for details"
+                "Error collecting coredump via gcore. See debug logs "
+                "for details"
             )
             self.logger.debug(f"gcore output: {ret['stdout']}")
 
