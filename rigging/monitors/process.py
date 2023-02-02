@@ -9,11 +9,9 @@
 # See the LICENSE file in the source distribution for further information
 
 import psutil
-import re
 
-from os.path import basename
 from rigging.monitors import BaseMonitor
-from rigging.utilities import convert_to_bytes, convert_to_human
+from rigging.utilities import convert_to_bytes, convert_to_human, get_proc_pids
 from rigging.exceptions import DestroyRig
 from threading import Lock
 
@@ -87,7 +85,7 @@ class ProcessMonitor(BaseMonitor):
                 f"'procs' must be string or list. Not {procs.__class__}"
             )
 
-        self.procs = self._get_proc_pids(_procs)
+        self.procs = get_proc_pids(_procs)
         if not self.procs:
             raise Exception(
                 "No PIDs matching specified process identifiers found. "
@@ -191,45 +189,6 @@ class ProcessMonitor(BaseMonitor):
             ' on this condition.'
         )
         # return False
-
-    @staticmethod
-    def _get_proc_pids(proc_list):
-        """
-        Convert any given process names/commands to relevant PIDs, as PIDs are
-        what we need to use to monitor given process(es).
-
-        :param proc_list: A list of process names, commands, or pre-determined
-                          PIDs.
-        :return: A list of all PIDs
-        """
-        _pids = []
-        filt = ['name', 'exe', 'cmdline', 'pid']
-        _running_procs = psutil.process_iter(attrs=filt)
-        for proc in proc_list:
-            if not proc:
-                continue
-            try:
-                for _each in _running_procs:
-                    try:
-                        if _each.pid == int(proc):
-                            _pids.append(int(proc))
-                    except Exception:
-                        # we have a process/command name
-                        _preg = re.compile(proc)
-                        _stats = [
-                            _each.info.get('name', ''),
-                            _each.info.get('exe', ''),
-                        ]
-                        if _each.info.get('cmdline'):
-                            _stats.append(
-                                basename(_each.info.get('cmdline')[0])
-                            )
-                        if any(_preg.match(_p) for _p in _stats if _p):
-                            _pids.append(_each.pid)
-            except Exception as err:
-                raise Exception(f"Error getting process pids: {err}")
-        _pids = list(set(_pids))
-        return _pids
 
     def watch_process_for_utilization(self, pid):
         """
