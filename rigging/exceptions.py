@@ -59,6 +59,43 @@ class CannotConfigureRigError(Exception):
         super(CannotConfigureRigError, self).__init__(message)
 
 
+class SendError(Exception):
+    """
+    Raised when we fail to communicate with a rig during the sending of an
+    instruction
+    """
+
+    def __init__(self, rig, msg=''):
+        message = (
+            f"Error communicating with rig {rig}{f': {msg}' if msg else ''}"
+        )
+        super(SendError, self).__init__(message)
+
+
+class ResponseError(Exception):
+    """
+    Raised when we fail to parse the response from a rig to a previously sent
+    instruction
+    """
+
+    def __init__(self, rig, msg=''):
+        message = (
+            f"Error received from rig {rig}{f': {msg}' if msg else ''}"
+        )
+        super(ResponseError, self).__init__(message)
+
+
+class DeadRigError(Exception):
+    """
+    Raised when a RigConnection is attempted to be made for a rig that died
+    but did not fully clean up appropriately.
+    """
+
+    def __init__(self, name):
+        message = f"Rig '{name}' is dead. Use --force to fully destroy."
+        super(DeadRigError, self).__init__(message)
+
+
 class DestroyRig(Exception):
     """
     Raised when we intentionally destroy a rig, so we can trap the exit of the
@@ -74,7 +111,10 @@ __all__ = [
     'BindSocketError',
     'CannotConfigureRigError',
     'CreateSocketError',
+    'DeadRigError',
     'DestroyRig',
     'MissingSocketError',
-    'SocketExistsError'
+    'SocketExistsError',
+    'SendError',
+    'ResponseError'
 ]
