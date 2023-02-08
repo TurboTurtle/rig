@@ -8,9 +8,9 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
+import json
 import os
 import shutil
-import socket
 import sys
 import tarfile
 import time
@@ -18,6 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
+from multiprocessing.connection import Listener
 from rigging.exceptions import (SocketExistsError, CreateSocketError,
                                 CannotConfigureRigError, DestroyRig)
 from rigging.utilities import load_rig_monitors, load_rig_actions
@@ -55,6 +56,7 @@ class BaseRig():
         self.name = self.config['name']
         self._triggered_from_cmdline = False
         self.kdump_configured = False
+        self._create_socket()
 
     def _extrapolate_rig_defaults(self, config):
         _defaults = {
@@ -116,17 +118,13 @@ class BaseRig():
         if not os.path.exists(RIG_DIR):
             os.makedirs(RIG_DIR)
         _sock_address = f"{RIG_DIR}{self.name}"
+
+        if os.path.exists(_sock_address):
+            raise SocketExistsError(_sock_address)
+
         try:
-            os.unlink(_sock_address)
-        except OSError:
-            if os.path.exists(_sock_address):
-                raise SocketExistsError(_sock_address)
-        try:
-            _sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            _sock.bind(_sock_address)
-            _sock.listen(1)
+            self.listener = Listener(_sock_address)
             self.logger.debug(f"Socket created at {_sock_address}")
-            return (_sock, _sock_address)
         except Exception as err:
             self.logger.error(f"Unable to create unix socket: {err}")
             raise CreateSocketError
@@ -244,7 +242,6 @@ class BaseRig():
             )
 
     def start_rig(self):
-        self._sock, self._sock_address = self._create_socket()
         for action in self.actions:
             try:
                 action.pre_action()
@@ -254,23 +251,26 @@ class BaseRig():
                 )
                 self.logger.info('Rig terminating due to previous error')
                 self._exit(1)
-        ret = self._create_and_monitor()
-        if ret:
-            arc_name = self.create_archive()
-            if arc_name:
+        try:
+            ret = self._create_and_monitor()
+            if ret:
+                arc_name = self.create_archive()
+                if arc_name:
+                    self.logger.info(
+                        f"An archive containing this rig's data is available "
+                        f"at {arc_name}"
+                    )
+            self._cleanup_threads()
+            if self.kdump_configured:
                 self.logger.info(
-                    f"An archive containing this rig's data is available at "
-                    f"{arc_name}"
+                    'Kdump action has been configured, please note that rig '
+                    'archive will not contain generated vmcore'
                 )
-        self._cleanup_threads()
-        if self.kdump_configured:
-            self.logger.info(
-                'Kdump action has been configured, please note that rig '
-                'archive will not contain generated vmcore'
-            )
-            for _act in self.actions:
-                if _act.action_name == 'kdump':
-                    _act.trigger()
+                for _act in self.actions:
+                    if _act.action_name == 'kdump':
+                        _act.trigger()
+        except DestroyRig:
+            pass
         self.logger.info(f"Rig {self.name} terminating")
         self._exit(0)
 
@@ -315,7 +315,8 @@ class BaseRig():
         _threads.append(self._control_pool.submit(self._listen_on_socket))
         _threads.append(self._control_pool.submit(self._start_monitors))
         self._status = 'Running'
-        ret = wait(_threads, return_when=FIRST_COMPLETED)
+        done, not_done = wait(_threads, return_when=FIRST_COMPLETED)
+        ret = done.pop().result()
         self._cleanup_threads()
         return ret
 
@@ -326,15 +327,53 @@ class BaseRig():
 
         If this thread exits, the rig will exit as well.
         """
+
+        def _respond_on_conn(result, success):
+            try:
+                conn.send_bytes(json.dumps({
+                    'result': result,
+                    'success': success
+                }).encode())
+            except BrokenPipeError:
+                self.logger.debug(
+                    'Could not respond to client due to broken pipe'
+                )
+            except Exception as e:
+                self.logger.debug(f"Error responding to client request: {e}")
+
+        commands = {
+            'destroy': self._destroy_self
+        }
+
+        self._sock_address = f"{RIG_DIR}{self.name}"
         self.logger.debug(f"Listening on {self._sock_address}")
         while True:
-            conn, client = self._sock.accept()
-            try:
-                req = conn.recv(1024).decode()
-                print(req)
-            except Exception as err:
-                self.logger.error(f"Error on socket: {err}")
-        # TODO: build this out to actually react to socket traffic
+            with self.listener.accept() as conn:
+                try:
+                    req = conn.recv_bytes(4096)
+                    try:
+                        req = json.loads(req.decode())
+                    except Exception as err:
+                        raise Exception(
+                            f"Could not translate received socket "
+                            f"communication: {err}"
+                        )
+
+                    if req['command'] not in commands:
+                        raise Exception(
+                            f"Invalid command '{req['command']}' received"
+                        )
+
+                    _cmd = commands[req['command']]
+                    _result, _success = _cmd()
+                    _respond_on_conn(_result, success=_success)
+
+                except DestroyRig:
+                    _respond_on_conn(result='', success=True)
+                    raise
+                except Exception as err:
+                    self.logger.error(str(err))
+                    _respond_on_conn(str(err), False)
 
     def _start_monitors(self):
         """
@@ -356,7 +395,7 @@ class BaseRig():
                 self.trigger_actions()
         except Exception as err:
             self.logger.error(err)
-            raise
+        return True
 
     def _start_monitor_threads(self):
         """
@@ -446,3 +485,15 @@ class BaseRig():
             except Exception as err:
                 self.logger.error(f"Could not remove temp directory: {err}")
             os._exit(0)
+
+    def _destroy_self(self):
+        """
+        Called when this rig receives a destroy command from the CLI
+
+        :return: DestroyRig exception
+        """
+        self.logger.info(
+            'Received destroy command, terminating rig without '
+            'triggering actions'
+        )
+        raise DestroyRig
