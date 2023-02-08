@@ -65,9 +65,6 @@ if __name__ == '__main__':
                     raise PermissionError("Command requires root privileges")
             rig = rig_cmds[args['subcmd']](args)
             rig.execute()
-        else:
-            print(f"Unknown command: {args['subcmd']}")
-            sys.exit(1)
     except Exception as err:
         print(f"{err}")
         sys.exit(1)
