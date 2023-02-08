@@ -13,7 +13,7 @@ import string
 import yaml
 
 from rigging.commands import RigCmd
-from rigging.exceptions import CannotConfigureRigError
+from rigging.exceptions import CannotConfigureRigError, SocketExistsError
 from rigging import BaseRig
 
 
@@ -76,9 +76,16 @@ class CreateCmd(RigCmd):
         return _base
 
     def _create_rig(self):
-        self.logger.info(f"Setting up new rig '{self.name}'")
         try:
             base = BaseRig(config=self.base_config, logger=self.logger)
+        except SocketExistsError:
+            raise Exception(
+                f"A rig with the name '{self.config['name']}' already exists"
+            )
+        except Exception as err:
+            raise Exception(f"Could not initialize new rig: {err}")
+        self.logger.info(f"Setting up new rig '{self.name}'")
+        try:
             for monitor in self.config['monitors']:
                 base.add_monitor(monitor, self.config['monitors'][monitor])
             for action in self.config['actions']:
@@ -95,8 +102,11 @@ class CreateCmd(RigCmd):
                 not self.base_config['foreground']):
             base.detach()
             print(f"Created rig {self.name} successfully")
-        self.logger.info('Rig successfully configured, starting now...')
-        base.start_rig()
+        try:
+            base.start_rig()
+            self.logger.info('Rig successfully configured, starting now...')
+        except Exception as err:
+            self.logger.error(f"Rig failed to start: {err}")
 
     def _generate_rig_name(self):
         if 'name' in self.config:
