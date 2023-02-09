@@ -19,11 +19,11 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
 from multiprocessing.connection import Listener
+from rigging.connection import RIG_SOCK_DIR
 from rigging.exceptions import (SocketExistsError, CreateSocketError,
                                 CannotConfigureRigError, DestroyRig)
 from rigging.utilities import load_rig_monitors, load_rig_actions
 
-RIG_DIR = '/var/run/rig/'
 
 
 class BaseRig():
@@ -46,17 +46,24 @@ class BaseRig():
         :param logger: The instantiated logger from the calling RigCmd
         """
         self.logger = logger
+        self.config = self._extrapolate_rig_defaults(config)
+        self.tmpdir = self.config['tmpdir']
+        self.name = self.config['name']
+
+        if not os.path.exists(RIG_SOCK_DIR):
+            os.makedirs(RIG_SOCK_DIR)
+        self._sock_address = os.path.join(RIG_SOCK_DIR, self.name)
+
+        if os.path.exists(self._sock_address):
+            raise SocketExistsError(self._sock_address)
+
         self._loaded_monitors = load_rig_monitors()
         self._loaded_actions = load_rig_actions()
         self.files = []
         self.monitors = []
         self.actions = []
-        self.config = self._extrapolate_rig_defaults(config)
-        self.tmpdir = self.config['tmpdir']
-        self.name = self.config['name']
         self._triggered_from_cmdline = False
         self.kdump_configured = False
-        self._create_socket()
 
     def _extrapolate_rig_defaults(self, config):
         _defaults = {
@@ -115,16 +122,9 @@ class BaseRig():
         This socket is used by the rig cli when getting status information or
         destroying a deployed rig before the trigger event happens.
         """
-        if not os.path.exists(RIG_DIR):
-            os.makedirs(RIG_DIR)
-        _sock_address = f"{RIG_DIR}{self.name}"
-
-        if os.path.exists(_sock_address):
-            raise SocketExistsError(_sock_address)
-
         try:
-            self.listener = Listener(_sock_address)
-            self.logger.debug(f"Socket created at {_sock_address}")
+            self.listener = Listener(self._sock_address)
+            self.logger.debug(f"Socket created at {self._sock_address}")
         except Exception as err:
             self.logger.error(f"Unable to create unix socket: {err}")
             raise CreateSocketError
@@ -345,7 +345,7 @@ class BaseRig():
             'destroy': self._destroy_self
         }
 
-        self._sock_address = f"{RIG_DIR}{self.name}"
+        self._create_socket()
         self.logger.debug(f"Listening on {self._sock_address}")
         while True:
             with self.listener.accept() as conn:
@@ -369,8 +369,12 @@ class BaseRig():
                     _respond_on_conn(_result, success=_success)
 
                 except DestroyRig:
-                    _respond_on_conn(result='', success=True)
+                    _respond_on_conn(result='destroyed', success=True)
                     raise
+                except EOFError:
+                    # the first receive can generate an EOF before Listener is
+                    # cycles to accept the actual first socket connection
+                    pass
                 except Exception as err:
                     self.logger.error(str(err))
                     _respond_on_conn(str(err), False)
