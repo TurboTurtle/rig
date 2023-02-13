@@ -66,8 +66,6 @@ class BaseAction():
             if not check_exists(binary):
                 raise Exception(f"Required binary '{binary}' not found")
 
-        self.configure(**kwargs)
-
     def configure(self, **kwargs):
         """
         Actions will need to override this method to support action options.

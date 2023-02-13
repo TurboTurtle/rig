@@ -26,7 +26,7 @@ class BaseMonitor():
     """
     monitor_name = 'Undefined'
 
-    def __init__(self, config, logger, **kwargs):
+    def __init__(self, config, logger):
         """
         The initializer for any monitor will set the base configuration of the
         rig (so, global config options) and then pass the monitor-specific
@@ -35,7 +35,6 @@ class BaseMonitor():
         self._monitor_threads = []
         self.config = config
         self.logger = logger
-        self.configure(**kwargs)
 
     def configure(self, **kwargs):
         """
