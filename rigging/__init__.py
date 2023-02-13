@@ -67,7 +67,6 @@ class BaseRig():
 
     def _extrapolate_rig_defaults(self, config):
         _defaults = {
-            'foreground': False,
             'repeat': 0,
             'repeat_delay': 1,
             'delay': 0,
@@ -96,19 +95,6 @@ class BaseRig():
         os.setsid()
         os.umask(0)
         _fork()
-
-        sys.stdin = sys.__stdin__
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-        sys.stdout.flush()
-        sys.stderr.flush()
-        _std = getattr(os, 'devnull', '/dev/null')
-        sin = open(_std, 'r')
-        sout = open(_std, 'a+')
-        serr = open(_std, 'a+')
-        os.dup2(sin.fileno(), sys.stdin.fileno())
-        os.dup2(sout.fileno(), sys.stdin.fileno())
-        os.dup2(serr.fileno(), sys.stderr.fileno())
 
         self.pid = os.getpid()
         self.logger.debug('Detaching from console')

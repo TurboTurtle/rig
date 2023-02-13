@@ -61,8 +61,6 @@ class CreateCmd(RigCmd):
         parser.add_argument('-f', '--config-file', required=True,
                             help='A yaml file specifying the rig\'s '
                                  'configuration ')
-        parser.add_argument('--foreground', default=False, action='store_true',
-                            help='Run the rig in the foreground')
 
     def _generate_base_config(self):
         _base = self.config.copy()
@@ -98,10 +96,12 @@ class CreateCmd(RigCmd):
             except Exception as err:
                 self.logger.error(f"Could not remove temp directory: {err}")
             raise
-        if ('foreground' not in self.config and
-                not self.base_config['foreground']):
+        try:
             base.detach()
             print(f"Created rig {self.name} successfully")
+        except Exception as err:
+            self.logger.error(f"Could not detach from console: {err}")
+            raise
         try:
             base.start_rig()
             self.logger.info('Rig successfully configured, starting now...')
