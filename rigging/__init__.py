@@ -179,7 +179,8 @@ class BaseRig():
             )
         try:
             mon = self._find_monitor(monitor)
-            _mon = mon(self.config, self.logger, **config)
+            _mon = mon(self.config, self.logger)
+            _mon.configure(**config)
             self.logger.debug(f"Monitor {monitor} configured and validated")
             self.monitors.append(_mon)
         except TypeError as terr:
@@ -219,7 +220,8 @@ class BaseRig():
             )
         try:
             act = self._find_action(action)
-            _act = act(self.config, self.logger, self.tmpdir, **config)
+            _act = act(self.config, self.logger, self.tmpdir)
+            _act.configure(**config)
             self.logger.debug(f"Action {action} configured and validated")
             self.actions.append(_act)
             if _act.action_name == 'kdump':
