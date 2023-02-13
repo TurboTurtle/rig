@@ -1,14 +1,18 @@
+**rig is currently undergoing a major re-write and re-design to v2.**
+
+As such, some functionality may not be present from v1 to v2 and users should familiarize themselves with the
+project if they wish to use v2 prior to it being officially packaged in any manner.
+
 # rig
 A lightweight, flexible, easy to use system monitoring and event handling utility
 
 # Description
 rig is designed to aid system administrators and support engineers in diagnostic data collection for issues that are seemingly
-random in their occurrence, or occur at inoportune times for human intervention when collecting data about the event.
+random in their occurrence, or occur at inopportune times for human intervention when collecting data about the event.
 
 # Design
-rig operates on an event->reaction model. Trigger events can be referred to as "monitors" or "triggers" and the reactions are simply "actions"
-in the project's parlance. A single instance of rig running and watching for an event is also known a "a rig", however it is also correct to identify
-a monitor as "a XYZ rig".
+rig operates on an event->reaction model. The specifics of what events trigger what (re)actions are defined in a **rigfile** - that is, a yaml-formatted
+file that is parsed by the rig CLI.
 
 Rigs run as detached processes until either the trigger condition is met, the user destroys the rig, or the system is rebooted.
 
@@ -23,53 +27,37 @@ is recorded and wants to collect a coredump of the process while it is in this h
 a rig like the following to do this:
 
 ~~~
-# rig logs --message "This is my test message" --gcore my_failing_service
+---
+# my_rigfile.yaml
+name: my_first_rig
+monitors:
+  logs:
+    message: "this is my test message"
+actions:
+  gcore:
+    procs:
+      - my_failing_service
+...
+
+# rig create -f my_rigfile.yml
 ~~~
 
 The above will create a rig that monitors the system journal (for distributions using journald) _and_ `/var/log/messages` by default
-for any new entry that matches the string `This is my test message`. When either the journal or the messages file gets a new entry with
+for any new entry that matches the string `this is my test message`. When either the journal or the messages file gets a new entry with
 this content, the rig is considered to be "triggered" and the configured actions will be taken. In this case, that action is to use `gcore`
 to collect a coredump of the `my_failing_service` process.
 
 
 # Supported Monitors and Actions
 
-A rig can watch a single monitor, but can take an arbitrary number of actions. Generally speaking every rig supports every action, and where that
-is not the case it will be explicitly documented. As of this writing there are no such examples.
-
-To get a list of supported monitors run `rig --help`:
-
-~~~
-usage: 
-    rig <resource or subcmd> <options>
-
-    <subcmd> may be one of the following:
-
-    list    -   Get a list of current rigs
-    destroy -   Destroy a specified rig
-
-    <resource> may be any of the following:
-    logs    -   Configure a rig to watch log file(s) and/or journal(s) 
-~~~
-
-And for any actions supported for the monitor in question, use `rig <resource> --help`:
-
-
-~~~
-usage: 
-    rig logs <options>
-
-    Valid actions:
-
-    sosreport 	 Generate a sosreport when triggered
-    gcore        Use gcore to generate a coredump for specified PID(s)
-~~~
+A rig can watch any number of conditions via the supported `monitors`, and similarly take any number of supported `actions` in response to
+the monitored condition being met.
 
 # Deterministic Sequence of Actions
 
-As stated earlier, a single rig can have any number of actions chained together in a single invocation. The actions will be run _serially_ in order of
+As stated earlier, a rig can have any number of actions chained together in response to an event. The actions will be run _serially_ in order of
 the action's priority weight. These weights are set in the action's class, and are currently not user controllable. Because of this priority weighting system
-chaining actions together will always result in the same order of execution regardless of the order of the options on the command line.
+chaining actions together will always result in the same order of execution regardless of the order of the actions in the rigfile.
 
 Care is taken to be sure that these weights are set in a logical manner. Actions that are time-sensitive in the sense that they need to be executed as close to
 the time of the triggering event as possible will be run first. Actions that are not as time-sensitive or those that may change system state will be run later or last as appropriate.
