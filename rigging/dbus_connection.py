@@ -19,6 +19,9 @@ class RigDBusConnection(RigConnection):
 
     def _communicate(self, command):
         method = getattr(self._rig, command)
+        if method is None:
+            pass # TODO: raise InvalidMethod?
+
         try:
             ret = method(dbus_interface="com.redhat.RigInterface")
             result = ret.get("result")
@@ -47,14 +50,13 @@ class RigDBusListener(dbus.service.Object):
 
     @dbus.service.method("com.redhat.RigInterface",
                         in_signature='', out_signature='a{ss}')
-    def Destroy(self):
+    def destroy(self):
         print("Destroying rig")
-        #raise DestroyRig
-        return { # yield {
+        # TODO: set variable or run callback
+        return {
             "result": "destroyed",
             "success": "true",
         }
-
 
 if __name__ == '__main__':
     import sys
