@@ -18,10 +18,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
-from multiprocessing.connection import Listener
+from rigging.dbus_connection import RigDBusListener
 from rigging.connection import RIG_SOCK_DIR
-from rigging.exceptions import (SocketExistsError, CreateSocketError,
-                                CannotConfigureRigError, DestroyRig)
+from rigging.exceptions import CannotConfigureRigError, DestroyRig
 from rigging.utilities import load_rig_monitors, load_rig_actions
 
 
@@ -50,12 +49,7 @@ class BaseRig():
         self.tmpdir = self.config['tmpdir']
         self.name = self.config['name']
 
-        if not os.path.exists(RIG_SOCK_DIR):
-            os.makedirs(RIG_SOCK_DIR)
-        self._sock_address = os.path.join(RIG_SOCK_DIR, self.name)
-
-        if os.path.exists(self._sock_address):
-            raise SocketExistsError(self._sock_address)
+        self._create_dbus_service(self.name)
 
         self._loaded_monitors = load_rig_monitors()
         self._loaded_actions = load_rig_actions()
@@ -100,20 +94,9 @@ class BaseRig():
         self.logger.debug('Detaching from console')
         return True
 
-    def _create_socket(self):
-        """
-        Creates the UNIX socket that the rig will listen on for lifecycle
-        management.
-
-        This socket is used by the rig cli when getting status information or
-        destroying a deployed rig before the trigger event happens.
-        """
-        try:
-            self.listener = Listener(self._sock_address)
-            self.logger.debug(f"Socket created at {self._sock_address}")
-        except Exception as err:
-            self.logger.error(f"Unable to create unix socket: {err}")
-            raise CreateSocketError
+    def _create_dbus_service(self, name):
+        self._dbus_listener = RigDBusListener(name)
+        self.logger.debug(f"DBus service created for {name}.")
 
     def _find_monitor(self, monitor):
         """
@@ -300,7 +283,7 @@ class BaseRig():
         # listen on the UDS socket in one thread, spin the watcher
         # off in a separate thread
         self._control_pool = ThreadPoolExecutor(2)
-        _threads.append(self._control_pool.submit(self._listen_on_socket))
+        _threads.append(self._control_pool.submit(self._listen_on_dbus))
         _threads.append(self._control_pool.submit(self._start_monitors))
         self._status = 'Running'
         done, not_done = wait(_threads, return_when=FIRST_COMPLETED)
@@ -308,64 +291,8 @@ class BaseRig():
         self._cleanup_threads()
         return ret
 
-    def _listen_on_socket(self):
-        """
-        Actively listen on the UNIX socket configured for this rig and respond
-        as necessary to those requests.
-
-        If this thread exits, the rig will exit as well.
-        """
-
-        def _respond_on_conn(result, success):
-            try:
-                conn.send_bytes(json.dumps({
-                    'result': result,
-                    'success': success
-                }).encode())
-            except BrokenPipeError:
-                self.logger.debug(
-                    'Could not respond to client due to broken pipe'
-                )
-            except Exception as e:
-                self.logger.debug(f"Error responding to client request: {e}")
-
-        commands = {
-            'destroy': self._destroy_self
-        }
-
-        self._create_socket()
-        self.logger.debug(f"Listening on {self._sock_address}")
-        while True:
-            with self.listener.accept() as conn:
-                try:
-                    req = conn.recv_bytes(4096)
-                    try:
-                        req = json.loads(req.decode())
-                    except Exception as err:
-                        raise Exception(
-                            f"Could not translate received socket "
-                            f"communication: {err}"
-                        )
-
-                    if req['command'] not in commands:
-                        raise Exception(
-                            f"Invalid command '{req['command']}' received"
-                        )
-
-                    _cmd = commands[req['command']]
-                    _result, _success = _cmd()
-                    _respond_on_conn(_result, success=_success)
-
-                except DestroyRig:
-                    _respond_on_conn(result='destroyed', success=True)
-                    raise
-                except EOFError:
-                    # the first receive can generate an EOF before Listener is
-                    # cycles to accept the actual first socket connection
-                    pass
-                except Exception as err:
-                    self.logger.error(str(err))
-                    _respond_on_conn(str(err), False)
+    def _listen_on_dbus(self):
+        self._dbus_listener.run_listener()
 
     def _start_monitors(self):
         """
@@ -452,23 +379,11 @@ class BaseRig():
             pass
         thread._threads_queues.clear()
 
-    def _cleanup_socket(self):
-        try:
-            os.remove(self._sock_address)
-        except OSError as err:
-            if err.errno == 2:
-                pass
-            else:
-                self.logger.error(
-                    f"Failed to remove socket {self._sock_address}: {err}"
-                )
-
     def _exit(self, errno):
         """
         Handles exiting the main thread.
         """
         self._cleanup_threads()
-        self._cleanup_socket()
         if errno:
             raise SystemExit(errno)
         else:
