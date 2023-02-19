@@ -13,7 +13,7 @@ import os
 
 from rigging.commands import RigCmd
 from rigging.dbus_connection import RigDBusConnection
-from rigging.exceptions import DeadRigError, DBusServiceDoesntExistError
+from rigging.exceptions import DBusServiceDoesntExistError
 
 
 class DestroyCmd(RigCmd):
