@@ -4,32 +4,78 @@ import dbus.mainloop.glib
 from gi.repository import GLib
 from rigging.exceptions import DestroyRig
 from rigging.connection import RigConnection
+from rigging.exceptions import (DBusServiceExistsError, 
+                            DBusServiceDoesntExistError,
+                            DBusMethodDoesntExistError)
+
+class RigDBusMessage:
+    result = None
+    success = None
+
+    def __init__(self, result=None, success=None):
+        self.result = result
+        self.success = success
+
+class RigDBusCommand:
+    name = None
+
+class RigDBusCommandDestroy(RigDBusCommand):
+    name = "destroy"
 
 class RigDBusConnection(RigConnection):
+    """
+    Used to abstract communication with an existing rig over the dbus
+    service created by that particular rig.
+    """
     def __init__(self, rig_name):
+        """
+        :param rig_name: The name of the rig, which correlates to the name
+        of the socket
+        """
         self.name = rig_name
 
+        # TODO: Check/handle errors
         self._bus = dbus.SessionBus()
-        self._rig = self._bus.get_object(
+        try:
+            self._rig = self._bus.get_object(
                         f"com.redhat.Rig.{rig_name}", f"/RigControl")
+        except dbus.exceptions.DBusException as exc:
+            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.ServiceUnknown":
+                raise DBusServiceDoesntExistError(rig_name)
+            raise exc
 
 
-    def _create_instruction(self, instruction):
-        return instruction.capitalize()
 
     def _communicate(self, command):
-        method = getattr(self._rig, command)
-        if method is None:
-            pass # TODO: raise InvalidMethod?
+        """
+        Send a rig an instruction and then return the result directly to the
+        calling command for further handling
+
+        :param command: The command to have the rig perform
+        :return: The result of the command
+        """
+        method = getattr(self._rig, command.name)
 
         try:
             ret = method(dbus_interface="com.redhat.RigInterface")
-            result = ret.get("result")
-            success = ret.get("success")
+            return RigDBusMessage(**ret)
 
             print(f"{command}() result {result} success {success}")
+        except dbus.exceptions.DBusException as exc:
+            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.UnknownMethod":
+                raise DBusMethodDoesntExistError(f"{command.name}()")
+            raise exc
+
         except Exception as exc:
             print(f"Exception caught while calling {command} on {self.name}:{exc}")
+
+    def destroy_rig(self):
+        """
+        Instruct the rig to self-terminate without triggering any configured
+        actions or generating an archive.
+        """
+
+        return self._communicate(RigDBusCommandDestroy)
 
 
 class RigDBusListener(dbus.service.Object):
@@ -39,9 +85,12 @@ class RigDBusListener(dbus.service.Object):
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self._bus = dbus.SessionBus()
+        bus_path = f"com.redhat.Rig.{rig_name}"
+        if bus_path in self._bus.list_names():
+            raise DBusServiceExistsError(bus_path)
         self._bus_name = dbus.service.BusName(
-                            f"com.redhat.Rig.{rig_name}", self._bus)
-        #print("Bus created", self._bus_name)
+                            f"com.redhat.Rig.{rig_name}", self._bus,
+                            allow_replacement=False, replace_existing=False)
         self._loop = GLib.MainLoop()
         super().__init__(self._bus, f"/RigControl", *args, **kwargs)
 
@@ -52,50 +101,6 @@ class RigDBusListener(dbus.service.Object):
                         in_signature='', out_signature='a{ss}')
     def destroy(self):
         print("Destroying rig")
-        # TODO: set variable or run callback
-        return {
-            "result": "destroyed",
-            "success": "true",
-        }
-
-if __name__ == '__main__':
-    import sys
-    import os
-    from argparse import ArgumentParser
-    parser = ArgumentParser()
-    parser.add_argument("--listen", action="store_true")
-    parser.add_argument("--connect", action="store_true")
-    parser.add_argument("--list", action="store_true")
-    parser.add_argument("-n", "--name")
-    parser.add_argument("-c", "--command", choices=["destroy"])
-
-    args = parser.parse_args()
-
-    if (args.listen or args.connect) and not args.name:
-        print("`--name` is required when listening or connecting")
-        os.exit()
-
-    if args.listen:
-        print(f"Listening as `{args.name}`")
-        l = RigDBusListener(args.name)
-        l.run_listener()
-
-    elif args.connect:
-        conn = RigDBusConnection(args.name)
-        if args.command:
-            if args.command == "destroy":
-                conn.destroy_rig()
-            else:
-                print(f"Unknown command `{args.command}`")
-        else:
-            print("No `--command` specified")
-
-    elif args.list:
-        bus = dbus.SessionBus()
-        for service_name in bus.list_names():
-            if service_name.startswith("com.redhat.Rig."):
-                rig_name = service_name.split(".")[-1]
-                print(f'· {rig_name} ({str(service_name)})')
-
-    else:
-        print("Nothing to do. Hint: use --listen or --connect (or --help)")
+        # TODO: Actually destroy rig: set variable or run callback 
+        # (was raise DestroyRig
+        return RigDBusMessage("destroyed", True)
