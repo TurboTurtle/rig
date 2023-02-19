@@ -2,7 +2,6 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 from gi.repository import GLib
-from rigging.connection import RigConnection
 from rigging.exceptions import (DBusServiceExistsError, 
                             DBusServiceDoesntExistError,
                             DBusMethodDoesntExistError)
@@ -21,7 +20,7 @@ class RigDBusCommand:
 class RigDBusCommandDestroy(RigDBusCommand):
     name = "destroy"
 
-class RigDBusConnection(RigConnection):
+class RigDBusConnection:
     """
     Used to abstract communication with an existing rig over the dbus
     service created by that particular rig.
