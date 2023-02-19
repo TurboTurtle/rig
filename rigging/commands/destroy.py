@@ -12,8 +12,8 @@ import sys
 import os
 
 from rigging.commands import RigCmd
-from rigging.connection import RigConnection, RIG_SOCK_DIR
-from rigging.exceptions import DeadRigError
+from rigging.dbus_connection import RigDBusConnection
+from rigging.exceptions import DeadRigError, DBusServiceDoesntExistError
 
 
 class DestroyCmd(RigCmd):
@@ -50,19 +50,10 @@ class DestroyCmd(RigCmd):
 
     def _run_destroy(self, target):
         try:
-            conn = RigConnection(target)
+            conn = RigDBusConnection(target)
             ret = conn.destroy_rig()
             if not ret['success']:
                 raise Exception(f"Failed to destroy rig: {ret['result']}")
-        except OSError:
+        except DBusServiceDoesntExistError as exc:
             raise Exception(f"No such rig: {target}")
-        except DeadRigError:
-            if not self.options['force']:
-                raise
-            else:
-                try:
-                    os.unlink(os.path.join(RIG_SOCK_DIR, target))
-                except Exception as err:
-                    raise Exception(
-                        f"Could not remove dead rig '{target}': {err}"
-                    )
+
