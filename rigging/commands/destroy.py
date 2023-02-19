@@ -52,8 +52,8 @@ class DestroyCmd(RigCmd):
         try:
             conn = RigDBusConnection(target)
             ret = conn.destroy_rig()
-            if not ret['success']:
-                raise Exception(f"Failed to destroy rig: {ret['result']}")
+            if not ret.success:
+                raise Exception(f"Failed to destroy rig: {ret.result}")
         except DBusServiceDoesntExistError as exc:
             raise Exception(f"No such rig: {target}")
 
