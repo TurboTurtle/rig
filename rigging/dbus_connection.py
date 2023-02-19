@@ -2,7 +2,6 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 from gi.repository import GLib
-from rigging.exceptions import DestroyRig
 from rigging.connection import RigConnection
 from rigging.exceptions import (DBusServiceExistsError, 
                             DBusServiceDoesntExistError,
@@ -60,7 +59,6 @@ class RigDBusConnection(RigConnection):
             ret = method(dbus_interface="com.redhat.RigInterface")
             return RigDBusMessage(**ret)
 
-            print(f"{command}() result {result} success {success}")
         except dbus.exceptions.DBusException as exc:
             if exc.get_dbus_name() == "org.freedesktop.DBus.Error.UnknownMethod":
                 raise DBusMethodDoesntExistError(f"{command.name}()")
@@ -69,13 +67,15 @@ class RigDBusConnection(RigConnection):
         except Exception as exc:
             print(f"Exception caught while calling {command} on {self.name}:{exc}")
 
+        return None
+
     def destroy_rig(self):
         """
         Instruct the rig to self-terminate without triggering any configured
         actions or generating an archive.
         """
 
-        return self._communicate(RigDBusCommandDestroy)
+        return self._communicate(RigDBusCommandDestroy())
 
 
 class RigDBusListener(dbus.service.Object):
