@@ -66,6 +66,15 @@ class DBusServiceDoesntExistError(Exception):
         message = "No such service: %s" % addr
         super(DBusServiceDoesntExistError, self).__init__(message)
 
+class DBusMethodDoesntExistError(Exception):
+    """
+    Raised when we try to call a dbus method that doesn't exist
+    """
+
+    def __init__(self, addr=''):
+        message = "No such method: %s" % addr
+        super(DBusMethodDoesntExistError, self).__init__(message)
+
 class CannotConfigureRigError(Exception):
     """
     Raised when a rig fails to set itself up properly.
