@@ -18,8 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from concurrent.futures import thread
 from datetime import datetime
-from rigging.dbus_connection import RigDBusListener
-from rigging.connection import RIG_SOCK_DIR
+from rigging.connection import RigDBusListener
 from rigging.exceptions import CannotConfigureRigError
 from rigging.utilities import load_rig_monitors, load_rig_actions
 
@@ -29,7 +28,7 @@ class BaseRig():
     """
     The building block from which we construct rigs that will watch for
     specific conditions and then take pre-defined actions. The rig is first
-    initialized and given a UNIX socket for communication, and then given
+    initialized and a DBus service is used for communication, and then given
     a set of monitors and actions to take once those monitors are triggered.
 
     A rig must have at least one monitor and one action in order to be
@@ -74,8 +73,7 @@ class BaseRig():
         """
         Here we effectively daemonize the process by using the double-fork
         method. The rig will continue to run until a trigger event, or until
-        the rig cli is used to send a termination signal to the socket the rig
-        is listening on.
+        a command to terminate is received on the DBus listener.
         """
         def _fork():
             try:
@@ -269,18 +267,18 @@ class BaseRig():
 
     def _create_and_monitor(self):
         """
-        Here we kick off two threads in a pool. One will listen on the socket
-        for the rig and respond to any requests that come over it. The other
-        will start the monitors and wait for one of them to return. When either
-        thread returns, this method will return, which may result in the
-        configured actions being executed. It may, for example when being
-        forcibly destroyed, simply kill the rig process without performing any
-        of the actions.
+        Here we kick off two threads in a pool. One will initialize the DBus
+        listener loop for the rig and respond to any requests that come over
+        it. The other will start the monitors and wait for one of them to
+        return. When either thread returns, this method will return, which
+        may result in the configured actions being executed. It may, for
+        example when being forcibly destroyed, simply kill the rig process
+        without performing any of the actions.
 
         :return: True if the rig gets triggered
         """
         _threads = []
-        # listen on the UDS socket in one thread, spin the watcher
+        # spawn the DBus listener in one thread, spin the watcher
         # off in a separate thread
         self._control_pool = ThreadPoolExecutor(2)
         _threads.append(self._control_pool.submit(self._listen_on_dbus))
