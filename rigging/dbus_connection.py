@@ -14,6 +14,12 @@ class RigDBusMessage:
         self.result = result
         self.success = success
 
+    def serialize(self):
+        return {
+            'result': str(self.result),
+            'success': str(self.success),
+        }
+
 class RigDBusCommand:
     name = None
     def __init__(self, command_name):
@@ -33,6 +39,7 @@ class RigDBusConnection:
 
         # TODO: Check/handle errors
         self._bus = dbus.SessionBus()
+
         try:
             self._rig = self._bus.get_object(
                         f"com.redhat.Rig.{rig_name}", f"/RigControl")
@@ -78,8 +85,11 @@ class RigDBusConnection:
 
 class RigDBusListener(dbus.service.Object):
 
-    def __init__(self, rig_name, *args, **kwargs):
-        self.name = rig_name
+    _command_map = None
+
+    def __init__(self, rig_name, logger):
+        self._command_map = {}
+        self.logger = logger
 
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         self._bus = dbus.SessionBus()
@@ -90,15 +100,30 @@ class RigDBusListener(dbus.service.Object):
                             f"com.redhat.Rig.{rig_name}", self._bus,
                             allow_replacement=False, replace_existing=False)
         self._loop = GLib.MainLoop()
-        super().__init__(self._bus, f"/RigControl", *args, **kwargs)
+        super().__init__(self._bus, f"/RigControl")
+
+    def map_rig_command(self, command_name, callback):
+        self._command_map[command_name] = callback
 
     def run_listener(self):
         self._loop.run()
 
     @dbus.service.method("com.redhat.RigInterface",
-                        in_signature='', out_signature='a{ss}')
-    def destroy(self):
-        print("Destroying rig")
-        # TODO: Actually destroy rig: set variable or run callback 
-        # (was raise DestroyRig
-        return RigDBusMessage("destroyed", True)
+                        in_signature='', out_signature='a{ss}',
+                        async_callbacks=('ok', 'err'))
+    def destroy(self, ok, err):
+        try:
+            _func = self._command_map["destroy"]
+            if not _func:
+                err(RigDBusMessage("Command `destroy` not implemented.",
+                    False).serialize())
+
+            self.logger.info("Destroying rig")
+            ok(RigDBusMessage("destroyed.", True).serialize())
+            _func()
+
+        except KeyError:
+            self.logger.error(f"Command `destroy` is not defined.")
+        except Exception as exc:
+            self.logger.error(f"Error when trying to destroy rig: {exc}")
+
