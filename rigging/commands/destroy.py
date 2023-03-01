@@ -41,8 +41,8 @@ class DestroyCmd(RigCmd):
     def execute(self):
         for target in self.options['rig_id']:
             try:
-                self._run_destroy(target)
-                sys.stdout.write(f"Rig '{target}' destroyed\n")
+                result = self._run_destroy(target)
+                sys.stdout.write(f"Rig '{target}': {result}\n")
             except Exception as err:
                 # don't stop iteration due to one bad attempt
                 sys.stdout.write(f"{err}\n")
@@ -53,6 +53,8 @@ class DestroyCmd(RigCmd):
             ret = conn.destroy_rig()
             if not ret.success:
                 raise Exception(f"Failed to destroy rig: {ret.result}")
+
+            return ret.result
         except DBusServiceDoesntExistError as exc:
             raise Exception(f"No such rig: {target}")
 
