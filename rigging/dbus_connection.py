@@ -119,6 +119,13 @@ class RigDBusListener(dbus.service.Object):
                     False).serialize())
 
             self.logger.info("Destroying rig")
+
+            # this callback is expected to terminate the process, so we need
+            # to send feedback to the client before the function is called.
+            # Using async_callbacks for this, as otherwise the result would
+            # need to be returned from this method, and that will never
+            # happen if _func() performs thread cleanup and finishes the
+            # process.
             ok(RigDBusMessage("destroyed.", True).serialize())
             _func()
 
