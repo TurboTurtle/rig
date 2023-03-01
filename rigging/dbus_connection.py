@@ -16,9 +16,8 @@ class RigDBusMessage:
 
 class RigDBusCommand:
     name = None
-
-class RigDBusCommandDestroy(RigDBusCommand):
-    name = "destroy"
+    def __init__(self, command_name):
+        self.name = command_name
 
 class RigDBusConnection:
     """
@@ -74,7 +73,7 @@ class RigDBusConnection:
         actions or generating an archive.
         """
 
-        return self._communicate(RigDBusCommandDestroy())
+        return self._communicate(RigDBusCommand("destroy"))
 
 
 class RigDBusListener(dbus.service.Object):
