@@ -9,7 +9,6 @@
 # See the LICENSE file in the source distribution for further information.
 
 import sys
-import os
 
 from rigging.commands import RigCmd
 from rigging.dbus_connection import RigDBusConnection
