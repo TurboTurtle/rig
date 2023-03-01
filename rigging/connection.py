@@ -1,79 +1,136 @@
-# Copyright (C) 2023 Red Hat, Inc., Jake Hunsaker <jhunsake@redhat.com>
+import dbus
+import dbus.service
+import dbus.mainloop.glib
+from gi.repository import GLib
+from rigging.exceptions import (DBusServiceExistsError, 
+                            DBusServiceDoesntExistError,
+                            DBusMethodDoesntExistError)
 
-# This file is part of the rig project: https://github.com/TurboTurtle/rig
-#
-# This copyrighted material is made available to anyone wishing to use,
-# modify, copy, or redistribute it subject to the terms and conditions of
-# version 2 of the GNU General Public License.
-#
-# See the LICENSE file in the source distribution for further information.
+class RigDBusMessage:
+    result = None
+    success = None
 
-import json
-import os
+    def __init__(self, result=None, success=None):
+        self.result = result
+        self.success = success
 
-from multiprocessing.connection import Client
-from rigging.exceptions import SendError, ResponseError, DeadRigError
+    def serialize(self):
+        return {
+            'result': str(self.result),
+            'success': str(self.success),
+        }
 
-RIG_SOCK_DIR = '/var/run/rig'
+class RigDBusCommand:
+    name = None
+    def __init__(self, command_name):
+        self.name = command_name
 
-
-class RigConnection():
+class RigDBusConnection:
     """
-    Used to abstract communication with an existing rig over the socket created
-    at /var/run/rig for that particular rig.
+    Used to abstract communication with an existing rig over the dbus
+    service created by that particular rig.
     """
-
     def __init__(self, rig_name):
         """
-        :param rig_name: The name of the rig, which correlates to the name of
-        the socket
+        :param rig_name: The name of the rig, which correlates to the name
+        of the service exported via DBus.
         """
         self.name = rig_name
-        self.sock_path = os.path.join(RIG_SOCK_DIR, self.name)
-        if not os.path.exists(self.sock_path):
-            raise OSError(f"No socket found for rig {self.name}")
+
+        # TODO: Check/handle errors
+        self._bus = dbus.SessionBus()
+
         try:
-            # if the rig has died but left its socket behind, this will fail
-            Client(self.sock_path)
-        except Exception:
-            raise DeadRigError(rig_name)
+            self._rig = self._bus.get_object(
+                        f"com.redhat.Rig.{rig_name}", f"/RigControl")
+        except dbus.exceptions.DBusException as exc:
+            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.ServiceUnknown":
+                raise DBusServiceDoesntExistError(rig_name)
+            raise exc
+
+
 
     def _communicate(self, command):
         """
         Send a rig an instruction and then return the result directly to the
-        calling command (after json loading) for further handling
+        calling command for further handling
 
         :param command: The command to have the rig perform
         :return: The result of the command
         """
-        with Client(self.sock_path) as client:
-            try:
-                client.send_bytes(json.dumps(command).encode())
-            except Exception as err:
-                raise SendError(self.name, err)
+        method = getattr(self._rig, command.name)
 
-            try:
-                return json.loads(client.recv_bytes(4096).decode())
-            except Exception as err:
-                raise ResponseError(self.name, err)
+        try:
+            ret = method(dbus_interface="com.redhat.RigInterface")
+            return RigDBusMessage(**ret)
 
-    def _create_instruction(self, instruction):
-        """
-        Create an instruction to send via _communicate() that can be serialized
-        via json
+        except dbus.exceptions.DBusException as exc:
+            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.UnknownMethod":
+                raise DBusMethodDoesntExistError(f"{command.name}()")
+            raise exc
 
-        :param instruction: What to instruct the rig to do
-        :return: A dict formatted in the way a rig expects socket communication
-                 to look like
-        """
-        return {
-            'command': instruction,
-            'rig_name': self.name,
-        }
+        except Exception as exc:
+            print(f"Exception caught while calling {command} on {self.name}:{exc}")
+
+        return None
 
     def destroy_rig(self):
         """
         Instruct the rig to self-terminate without triggering any configured
         actions or generating an archive.
         """
-        return self._communicate(self._create_instruction('destroy'))
+
+        return self._communicate(RigDBusCommand("destroy"))
+
+
+class RigDBusListener(dbus.service.Object):
+
+    _command_map = None
+
+    def __init__(self, rig_name, logger):
+        self._command_map = {}
+        self.logger = logger
+
+        dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+        self._bus = dbus.SessionBus()
+        bus_path = f"com.redhat.Rig.{rig_name}"
+        if bus_path in self._bus.list_names():
+            raise DBusServiceExistsError(bus_path)
+        self._bus_name = dbus.service.BusName(
+                            f"com.redhat.Rig.{rig_name}", self._bus,
+                            allow_replacement=False, replace_existing=False)
+        self._loop = GLib.MainLoop()
+        super().__init__(self._bus, f"/RigControl")
+
+    def map_rig_command(self, command_name, callback):
+        self._command_map[command_name] = callback
+
+    def run_listener(self):
+        self._loop.run()
+
+    @dbus.service.method("com.redhat.RigInterface",
+                        in_signature='', out_signature='a{ss}',
+                        async_callbacks=('ok', 'err'))
+    def destroy(self, ok, err):
+        try:
+            _func = self._command_map["destroy"]
+            if not _func:
+                err(RigDBusMessage("Command `destroy` not implemented.",
+                    False).serialize())
+
+            self.logger.info("Destroying rig")
+
+            # this callback is expected to terminate the process, so we need
+            # to send feedback to the client before the function is called.
+            # Using async_callbacks for this, as otherwise the result would
+            # need to be returned from this method, and that will never
+            # happen if _func() performs thread cleanup and finishes the
+            # process.
+            ok(RigDBusMessage("destroyed.", True).serialize())
+            _func()
+
+        except KeyError:
+            self.logger.error(f"Command `destroy` is not defined.")
+        except Exception as exc:
+            self.logger.error(f"Error when trying to destroy rig: {exc}")
+

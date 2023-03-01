@@ -11,7 +11,7 @@
 import sys
 
 from rigging.commands import RigCmd
-from rigging.dbus_connection import RigDBusConnection
+from rigging.connection import RigDBusConnection
 from rigging.exceptions import DBusServiceDoesntExistError
 
 
