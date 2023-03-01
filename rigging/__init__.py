@@ -20,7 +20,7 @@ from concurrent.futures import thread
 from datetime import datetime
 from rigging.dbus_connection import RigDBusListener
 from rigging.connection import RIG_SOCK_DIR
-from rigging.exceptions import CannotConfigureRigError, DestroyRig
+from rigging.exceptions import CannotConfigureRigError
 from rigging.utilities import load_rig_monitors, load_rig_actions
 
 
@@ -95,7 +95,8 @@ class BaseRig():
         return True
 
     def _create_dbus_service(self, name):
-        self._dbus_listener = RigDBusListener(name)
+        self._dbus_listener = RigDBusListener(name, self.logger)
+        self._dbus_listener.map_rig_command("destroy", self._destroy_self)
         self.logger.debug(f"DBus service created for {name}.")
 
     def _find_monitor(self, monitor):
@@ -222,26 +223,25 @@ class BaseRig():
                 )
                 self.logger.info('Rig terminating due to previous error')
                 self._exit(1)
-        try:
-            ret = self._create_and_monitor()
-            if ret:
-                arc_name = self.create_archive()
-                if arc_name:
-                    self.logger.info(
-                        f"An archive containing this rig's data is available "
-                        f"at {arc_name}"
-                    )
-            self._cleanup_threads()
-            if self.kdump_configured:
+
+        ret = self._create_and_monitor()
+        if ret:
+            arc_name = self.create_archive()
+            if arc_name:
                 self.logger.info(
-                    'Kdump action has been configured, please note that rig '
-                    'archive will not contain generated vmcore'
+                    f"An archive containing this rig's data is available "
+                    f"at {arc_name}"
                 )
-                for _act in self.actions:
-                    if _act.action_name == 'kdump':
-                        _act.trigger()
-        except DestroyRig:
-            pass
+        self._cleanup_threads()
+        if self.kdump_configured:
+            self.logger.info(
+                'Kdump action has been configured, please note that rig '
+                'archive will not contain generated vmcore'
+            )
+            for _act in self.actions:
+                if _act.action_name == 'kdump':
+                    _act.trigger()
+
         self.logger.info(f"Rig {self.name} terminating")
         self._exit(0)
 
@@ -333,8 +333,6 @@ class BaseRig():
             result = list(results[0])[0].result()
             self.logger.info('Monitor thread completed. Triggering rig.')
             return result
-        except DestroyRig:
-            self._exit(0)
         except Exception as err:
             self.logger.error(f"Exception caught for rig {self.name}: {err}")
             self._exit(1)
@@ -397,10 +395,9 @@ class BaseRig():
         """
         Called when this rig receives a destroy command from the CLI
 
-        :return: DestroyRig exception
         """
         self.logger.info(
             'Received destroy command, terminating rig without '
             'triggering actions'
         )
-        raise DestroyRig
+        self._exit(0)
