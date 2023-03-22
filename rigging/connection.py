@@ -99,6 +99,48 @@ class RigDBusConnection:
 
 
 class RigDBusListener(dbus.service.Object):
+    """
+    RigDBusListener will:
+        - Attach to the DBus session bus.
+
+        - Create a new unique DBus service with the following path format:
+            com.redhat.Rig.RIG_NAME
+
+          where RIG_NAME is the name of the rig as defined in the yaml file.
+
+        - Spawn an glib event loop to start receiving DBus messages.
+
+    In order to define new commands:
+        - Add a new method to this class and decorate it with
+          @dbus.service.method so it's exposed via DBus.
+
+          The method exposed will be available for DBus clients via
+          `com.redhat.RigInterface.METHOD_NAME`
+
+        - Once the RigDBusListener instance is created, use
+          `map_rig_command()` to bind command names to whatever method
+          implements the functionality that must be run when the command is
+          called via DBus. See `BaseRig._create_dbus_service()`
+
+        - Whenever a method is called via DBus, the following will happen:
+
+            - RigDBusListener.COMMAND_NAME will receive the request.
+
+            - The RigDBusListener.COMMAND_NAME implementation will look for
+              the callback previously defined by accessing `_command_map`
+              using the command name as key.
+
+            - The callback will be run, and a RigDBusMessage will be
+              sent back to the client as feedback.
+
+
+    Additional notes:
+        Ideally a single, generic, catch-all DBus method should be
+        implemented here, however the python-dbus library doesn't seem to
+        permit exposing methods to the bus dynamically, hence the need to
+        define a new method, decorated with `dbus.service.method` for any
+        new command to be exposed via DBus.
+    """
 
     _command_map = None
 
