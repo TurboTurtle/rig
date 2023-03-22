@@ -2,6 +2,7 @@ import dbus
 
 from rigging.commands import RigCmd
 
+
 class ListCmd(RigCmd):
 
     def execute(self):
