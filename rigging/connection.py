@@ -146,5 +146,7 @@ class RigDBusListener(dbus.service.Object):
 
         except KeyError:
             self.logger.error("Command `destroy` is not defined.")
+            err(DBusMethodDoesntExistError("destroy"))
         except Exception as exc:
             self.logger.error(f"Error when trying to destroy rig: {exc}")
+            err(exc)
