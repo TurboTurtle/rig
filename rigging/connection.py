@@ -2,9 +2,10 @@ import dbus
 import dbus.service
 import dbus.mainloop.glib
 from gi.repository import GLib
-from rigging.exceptions import (DBusServiceExistsError, 
-                            DBusServiceDoesntExistError,
-                            DBusMethodDoesntExistError)
+from rigging.exceptions import (DBusServiceExistsError,
+                                DBusServiceDoesntExistError,
+                                DBusMethodDoesntExistError)
+
 
 class RigDBusMessage:
     result = None
@@ -20,10 +21,13 @@ class RigDBusMessage:
             'success': str(self.success),
         }
 
+
 class RigDBusCommand:
     name = None
+
     def __init__(self, command_name):
         self.name = command_name
+
 
 class RigDBusConnection:
     """
@@ -42,13 +46,12 @@ class RigDBusConnection:
 
         try:
             self._rig = self._bus.get_object(
-                        f"com.redhat.Rig.{rig_name}", f"/RigControl")
+                        f"com.redhat.Rig.{rig_name}", "/RigControl")
         except dbus.exceptions.DBusException as exc:
-            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.ServiceUnknown":
+            if exc.get_dbus_name() == \
+                    "org.freedesktop.DBus.Error.ServiceUnknown":
                 raise DBusServiceDoesntExistError(rig_name)
             raise exc
-
-
 
     def _communicate(self, command):
         """
@@ -65,12 +68,13 @@ class RigDBusConnection:
             return RigDBusMessage(**ret)
 
         except dbus.exceptions.DBusException as exc:
-            if exc.get_dbus_name() == "org.freedesktop.DBus.Error.UnknownMethod":
+            if exc.get_dbus_name() == \
+                    "org.freedesktop.DBus.Error.UnknownMethod":
                 raise DBusMethodDoesntExistError(f"{command.name}()")
             raise exc
 
         except Exception as exc:
-            print(f"Exception caught while calling {command} on {self.name}:{exc}")
+            print(f"Exception while calling {command} on {self.name}:{exc}")
 
         return None
 
@@ -100,7 +104,7 @@ class RigDBusListener(dbus.service.Object):
                             f"com.redhat.Rig.{rig_name}", self._bus,
                             allow_replacement=False, replace_existing=False)
         self._loop = GLib.MainLoop()
-        super().__init__(self._bus, f"/RigControl")
+        super().__init__(self._bus, "/RigControl")
 
     def map_rig_command(self, command_name, callback):
         self._command_map[command_name] = callback
@@ -109,8 +113,8 @@ class RigDBusListener(dbus.service.Object):
         self._loop.run()
 
     @dbus.service.method("com.redhat.RigInterface",
-                        in_signature='', out_signature='a{ss}',
-                        async_callbacks=('ok', 'err'))
+                         in_signature='', out_signature='a{ss}',
+                         async_callbacks=('ok', 'err'))
     def destroy(self, ok, err):
         try:
             _func = self._command_map["destroy"]
@@ -130,7 +134,6 @@ class RigDBusListener(dbus.service.Object):
             _func()
 
         except KeyError:
-            self.logger.error(f"Command `destroy` is not defined.")
+            self.logger.error("Command `destroy` is not defined.")
         except Exception as exc:
             self.logger.error(f"Error when trying to destroy rig: {exc}")
-
