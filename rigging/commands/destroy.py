@@ -56,5 +56,4 @@ class DestroyCmd(RigCmd):
 
             return ret.result
         except DBusServiceDoesntExistError as exc:
-            raise Exception(f"No such rig: {target}")
-
+            raise Exception(f"No such rig: {target}: {exc}")
