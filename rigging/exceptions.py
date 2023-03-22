@@ -48,6 +48,7 @@ class SocketExistsError(Exception):
         message = "Socket %s already exists on filesystem" % addr
         super(SocketExistsError, self).__init__(message)
 
+
 class DBusServiceExistsError(Exception):
     """
     Raised when we try to create a dbus service that already exists
@@ -56,6 +57,7 @@ class DBusServiceExistsError(Exception):
     def __init__(self, addr=''):
         message = "Service %s already exists" % addr
         super(DBusServiceExistsError, self).__init__(message)
+
 
 class DBusServiceDoesntExistError(Exception):
     """
@@ -66,6 +68,7 @@ class DBusServiceDoesntExistError(Exception):
         message = "No such service: %s" % addr
         super(DBusServiceDoesntExistError, self).__init__(message)
 
+
 class DBusMethodDoesntExistError(Exception):
     """
     Raised when we try to call a dbus method that doesn't exist
@@ -74,6 +77,7 @@ class DBusMethodDoesntExistError(Exception):
     def __init__(self, addr=''):
         message = "No such method: %s" % addr
         super(DBusMethodDoesntExistError, self).__init__(message)
+
 
 class CannotConfigureRigError(Exception):
     """
