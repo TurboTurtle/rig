@@ -8,7 +8,6 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-import json
 import os
 import shutil
 import sys
@@ -21,7 +20,6 @@ from datetime import datetime
 from rigging.connection import RigDBusListener
 from rigging.exceptions import CannotConfigureRigError
 from rigging.utilities import load_rig_monitors, load_rig_actions
-
 
 
 class BaseRig():
