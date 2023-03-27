@@ -9,6 +9,7 @@
 # See the LICENSE file in the source distribution for further information.
 
 
+import ast
 import dbus
 import dbus.service
 import dbus.mainloop.glib
@@ -76,7 +77,20 @@ class RigDBusConnection:
 
         try:
             ret = method(dbus_interface="com.redhat.RigInterface")
-            return RigDBusMessage(**ret)
+
+            # there is some fragility in the dbus native type subclasses it
+            # seems, so try to convert literally, otherwise take the raw value
+            # doing this ensures we return a proper message object, whose
+            # result attr matches the type of the response (string, dict..)
+            try:
+                result = ast.literal_eval(ret['result'])
+            except Exception:
+                result = ret['result']
+            try:
+                success = ast.literal_eval(ret['success'])
+            except Exception:
+                success = ret['success']
+            return RigDBusMessage(result=result, success=success)
 
         except dbus.exceptions.DBusException as exc:
             if exc.get_dbus_name() == \
@@ -96,6 +110,9 @@ class RigDBusConnection:
         """
 
         return self._communicate(RigDBusCommand("destroy"))
+
+    def describe(self):
+        return self._communicate(RigDBusCommand("describe"))
 
 
 class RigDBusListener(dbus.service.Object):
@@ -165,6 +182,29 @@ class RigDBusListener(dbus.service.Object):
     def run_listener(self):
         self._loop.run()
 
+    def _get_mapped_method(self, name, err_callback):
+        """
+        Try to find and return a mapped rig method based on a given method
+        name. If none is found, raise an exception.
+
+        :param name: The name that the mapped method was mapped to
+        :param err_callback: The callback used by DBus to report an error
+
+        :return: The method mapped from the rig
+        """
+        try:
+            _func = self._command_map[name]
+            if not _func:
+                msg = RigDBusMessage(
+                        f"Command '{name}' defined but not implemented", False)
+                err_callback(msg.serialize())
+            else:
+                return _func
+        except Exception:
+            msg = RigDBusMessage(f"Command '{name}' not defined by rig", False)
+            err_callback(msg.serialize())
+        raise KeyError(f"No command '{name}' available")
+
     @dbus.service.method("com.redhat.RigInterface",
                          in_signature='', out_signature='a{ss}',
                          async_callbacks=('ok', 'err'))
@@ -175,7 +215,7 @@ class RigDBusListener(dbus.service.Object):
                 err(RigDBusMessage("Command `destroy` not implemented.",
                     False).serialize())
 
-            self.logger.info("Destroying rig")
+            self.loggr.info("Destroying rig")
 
             # this callback is expected to terminate the process, so we need
             # to send feedback to the client before the function is called.
@@ -192,3 +232,19 @@ class RigDBusListener(dbus.service.Object):
         except Exception as exc:
             self.logger.error(f"Error when trying to destroy rig: {exc}")
             err(exc)
+
+    @dbus.service.method('com.redhat.RigInterface', in_signature='',
+                         out_signature='a{ss}', async_callbacks=('ok', 'err'))
+    def describe(self, ok, err):
+        """
+        Get a short description of the rig in its current state
+
+        :return: dict
+        """
+        try:
+            _func = self._get_mapped_method('describe', err)
+            _info = _func()
+            ok(RigDBusMessage(_info, True).serialize())
+        except Exception as error:
+            self.logger.error(f"Could not get description: {error}")
+            err(RigDBusMessage(error, False).serialize())
