@@ -45,6 +45,7 @@ class BaseRig():
         self.config = self._extrapolate_rig_defaults(config)
         self.tmpdir = self.config['tmpdir']
         self.name = self.config['name']
+        self.start_time = datetime.now()
 
         self._create_dbus_service(self.name)
 
@@ -93,6 +94,7 @@ class BaseRig():
     def _create_dbus_service(self, name):
         self._dbus_listener = RigDBusListener(name, self.logger)
         self._dbus_listener.map_rig_command("destroy", self._destroy_self)
+        self._dbus_listener.map_rig_command("describe", self.describe)
         self.logger.debug(f"DBus service created for {name}.")
 
     def _find_monitor(self, monitor):
@@ -397,3 +399,20 @@ class BaseRig():
             'triggering actions'
         )
         self._exit(0)
+
+    def describe(self):
+        """
+        Called when `rig list` is executed and the rig receives the describe
+        request via DBus. This should return a short set of descriptive info,
+        such as the current status, how long it has been running, and a brief
+        overview of monitors/actions.
+
+        :return: dict
+        """
+        _info = {}
+        _info['name'] = self.name
+        _info['start_time'] = self.start_time.isoformat()
+        _info['monitors'] = ','.join(mon.monitor_name for mon in self.monitors)
+        _info['actions'] = ','.join(act.action_name for act in self.actions)
+        _info['status'] = self._status
+        return _info
