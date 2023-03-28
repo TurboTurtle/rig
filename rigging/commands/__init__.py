@@ -44,6 +44,12 @@ class RigCmd():
         :type options:  dict
         """
         self.options = options
+        # always create a ui logger. Anything sent to rig.log or similar will
+        # need to have that RigCmd call _setup_logging()
+        self.ui_logger = logging.getLogger('rig_ui')
+        self.ui_logger.setLevel(logging.INFO)
+        console = logging.StreamHandler()
+        self.ui_logger.addHandler(console)
 
     @classmethod
     def add_parser_options(cls, parser):
