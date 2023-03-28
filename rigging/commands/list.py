@@ -9,7 +9,6 @@
 # See the LICENSE file in the source distribution for further information
 
 import dbus
-import sys
 
 from rigging.commands import RigCmd
 from rigging.connection import RigDBusConnection
@@ -44,17 +43,17 @@ class ListCmd(RigCmd):
             19
         )
 
-        sys.stdout.write(
+        self.ui_logger.info(
             f"{'NAME':<{nameln+1}}{'STARTED':<21}{'MONITORS':<{monln+1}}"
-            f"{'ACTIONS':<{actln+1}}{'STATUS':<10}\n"
+            f"{'ACTIONS':<{actln+1}}{'STATUS':<10}"
         )
 
         for rig in rigs:
             _rig = rigs[rig]
-            sys.stdout.write(
+            self.ui_logger.info(
                 f"{_rig['name'][:nameln]:<{nameln+1}}"
                 f"{_rig['start_time'].split('.')[0].replace('T', ' '):<21}"
                 f"{_rig['monitors'][:monln]:<{monln+1}}"
                 f"{_rig['actions'][:actln]:<{actln+1}}"
-                f"{_rig['status']:<10}\n"
+                f"{_rig['status']:<10}"
             )

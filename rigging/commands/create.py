@@ -98,7 +98,7 @@ class CreateCmd(RigCmd):
             raise
         try:
             base.detach()
-            print(f"Created rig {self.name} successfully")
+            self.ui_logger.info(f"Created rig {self.name} successfully")
         except Exception as err:
             self.logger.error(f"Could not detach from console: {err}")
             raise

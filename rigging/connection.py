@@ -215,7 +215,7 @@ class RigDBusListener(dbus.service.Object):
                 err(RigDBusMessage("Command `destroy` not implemented.",
                     False).serialize())
 
-            self.loggr.info("Destroying rig")
+            self.logger.info("Destroying rig")
 
             # this callback is expected to terminate the process, so we need
             # to send feedback to the client before the function is called.

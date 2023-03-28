@@ -8,7 +8,6 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
-import sys
 
 from rigging.commands import RigCmd
 from rigging.connection import RigDBusConnection
@@ -42,10 +41,10 @@ class DestroyCmd(RigCmd):
         for target in self.options['rig_id']:
             try:
                 result = self._run_destroy(target)
-                sys.stdout.write(f"Rig '{target}': {result}\n")
+                self.ui_logger.info(f"Rig '{target}': {result}")
             except Exception as err:
                 # don't stop iteration due to one bad attempt
-                sys.stdout.write(f"{err}\n")
+                self.ui_logger.error(f"{err}")
 
     def _run_destroy(self, target):
         try:
