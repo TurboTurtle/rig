@@ -246,5 +246,6 @@ class RigDBusListener(dbus.service.Object):
             _info = _func()
             ok(RigDBusMessage(_info, True).serialize())
         except Exception as error:
-            self.logger.error(f"Could not get description: {error}")
-            err(RigDBusMessage(error, False).serialize())
+            msg = f"Could not get description: {error}"
+            self.logger.error(msg)
+            err(Exception(msg))
