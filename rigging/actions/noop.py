@@ -29,3 +29,7 @@ class Noop(BaseAction):
         if not enabled:
             raise Exception("noop action requested but explicitly disabled")
         return True
+
+    @property
+    def produces(self):
+        return None

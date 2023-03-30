@@ -72,3 +72,7 @@ class KdumpAction(BaseAction):
         )
         with open('/proc/sysrq-trigger', 'w') as sysrq:
             sysrq.write('c')
+
+    @property
+    def produces(self):
+        return "A vmcore at your configured crash location following restart"

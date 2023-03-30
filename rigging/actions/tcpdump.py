@@ -161,3 +161,8 @@ class TcpdumpAction(BaseAction):
             self.devnull.close()
         except Exception as err:
             self.logger.error(f"Error during tcpdump cleanup: {err}")
+
+    @property
+    def produces(self):
+        basename = self.outfn.split('/')[-1]
+        return [f"{basename}{x}" for x in range(self.capture_count)]

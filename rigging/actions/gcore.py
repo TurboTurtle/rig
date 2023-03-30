@@ -165,3 +165,10 @@ class GcoreAction(BaseAction):
 
         if _frozen:
             self.thaw_pid(pid)
+
+    @property
+    def produces(self):
+        return [
+          f"core-{count}.{proc}" for count in range(self.config['repeat'] + 1)
+          for proc in self.procs
+        ]
