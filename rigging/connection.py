@@ -114,6 +114,9 @@ class RigDBusConnection:
     def describe(self):
         return self._communicate(RigDBusCommand("describe"))
 
+    def info(self):
+        return self._communicate(RigDBusCommand('info'))
+
 
 class RigDBusListener(dbus.service.Object):
     """
@@ -247,5 +250,20 @@ class RigDBusListener(dbus.service.Object):
             ok(RigDBusMessage(_info, True).serialize())
         except Exception as error:
             msg = f"Could not get description: {error}"
+            self.logger.error(msg)
+            err(Exception(msg))
+
+    @dbus.service.method('com.redhat.RigInterface', in_signature='',
+                         out_signature='a{ss}', async_callbacks=('ok', 'err'))
+    def info(self, ok, err):
+        """
+        Get detailed information about the rig and it's configuration
+        :return:
+        """
+        try:
+            _func = self._get_mapped_method('info', err)
+            ok(RigDBusMessage(_func(), True).serialize())
+        except Exception as error:
+            msg = f"Could not determine info: {error}"
             self.logger.error(msg)
             err(Exception(msg))

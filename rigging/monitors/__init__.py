@@ -116,3 +116,25 @@ class BaseMonitor():
         to do so consistently and according to the set value of `interval`.
         """
         time.sleep(self.config['interval'])
+
+    def get_info(self):
+        """
+        Used to return information about this monitor for the `rig info`
+        command. This will in turn call the monitor's `monitoring` property.
+
+        :return: dict containing the monitor type and what it is configured to
+                 monitor
+        """
+        return {
+            'type': self.monitor_name,
+            'monitoring': self.monitoring
+        }
+
+    @property
+    def monitoring(self):
+        """
+        This SHOULD BE overridden by specific monitors.
+        This method should describe in human-friendly terms what the monitor
+        is watching for in order to trigger the rig.
+        """
+        return 'undefined'
