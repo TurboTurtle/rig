@@ -328,3 +328,11 @@ class Packet(BaseMonitor):
                     f"Packet matching {match_str} found: {pkt_str}"
                 )
                 return True
+
+    @property
+    def monitoring(self):
+        _info = {
+            'interface': self._match_ifname
+        }
+        _info.update({k: str(v) for k, v in self._must_match.items()})
+        return _info

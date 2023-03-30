@@ -92,7 +92,7 @@ class ProcessMonitor(BaseMonitor):
                 "Aborting..."
             )
 
-        _state = self.metrics.pop('state')
+        _state = self.metrics['state']
         for proc in self.procs:
             if _state:
                 self.add_monitor_thread(
@@ -138,7 +138,10 @@ class ProcessMonitor(BaseMonitor):
         :param pid: The PID of the process to monitor
         :param state: The status string used by psutil to match against
         """
-        self.logger.debug(f"Launching monitor thread for PID {pid}")
+        self.logger.debug(
+            f"Launching monitor thread for PID {pid} in state "
+            f"{'not ' if self._state_invert_match else ''}{state}"
+        )
         proc = psutil.Process(pid)
         while True:
             try:
@@ -199,6 +202,8 @@ class ProcessMonitor(BaseMonitor):
         """
         _metrics = {}
         for _met in self.metrics:
+            if _met == 'state':
+                continue
             if self.metrics[_met] is not None:
                 _metrics[_met] = self.metrics[_met]
         _log_msg = ', '.join([
@@ -206,7 +211,7 @@ class ProcessMonitor(BaseMonitor):
             for k, v in _metrics.items()
         ])
         self.logger.debug(
-            f"Launching monitor thread for pid {pid} for "
+            f"Launching monitor thread for PID {pid} for "
             f"{_log_msg}"
         )
 
@@ -236,3 +241,20 @@ class ProcessMonitor(BaseMonitor):
                 self.wait_loop()
             except psutil.NoSuchProcess:
                 return self._hold_thread(pid)
+
+    @property
+    def monitoring(self):
+        _info = {
+            'pids': self.procs
+        }
+        for k, v in self.metrics.items():
+            if v is None:
+                continue
+            if k == 'state':
+                _info[k] = (
+                    f"{'not ' if self._state_invert_match else '' }"
+                    f"{PROC_STATES[self.metrics[k]][0]}"
+                )
+                continue
+            _info[k] = f">= {f'{v}%' if 'perc' in k else convert_to_human(v)}"
+        return _info

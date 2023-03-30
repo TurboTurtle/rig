@@ -202,3 +202,11 @@ class Logs(BaseMonitor):
                                  f"matching specified count configuration.")
                 return True
         return False
+
+    @property
+    def monitoring(self):
+        return {
+            'message': self.message.pattern,
+            'files': self.files,
+            'journals': self.journals
+        }

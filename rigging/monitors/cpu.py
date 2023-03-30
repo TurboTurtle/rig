@@ -70,6 +70,9 @@ class CpuMonitor(BaseMonitor):
                 (float(percent), )
             )
 
+        # save this to the instance so that self.monitoring can report on it
+        self.metrics = _metrics.copy()
+
         _metrics.pop('percent')
 
         if any(m is not None for m in _metrics.values()):
@@ -117,3 +120,11 @@ class CpuMonitor(BaseMonitor):
                         f" of {_monitor[_mon]}%"
                     )
                     return True
+
+    @property
+    def monitoring(self):
+        _info = {}
+        for metric in self.metrics:
+            if self.metrics[metric] is not None:
+                _info[metric] = f">= {self.metrics[metric]}%"
+        return _info

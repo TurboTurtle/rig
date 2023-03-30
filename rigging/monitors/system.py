@@ -33,6 +33,8 @@ class SystemMonitor(BaseMonitor):
                 'Must specify at least one of \'temperature\', or \'loadavg\''
             )
 
+        self.stats = {}
+
         if temperature is not None:
             self._configure_temp_monitor(temperature)
 
@@ -53,6 +55,7 @@ class SystemMonitor(BaseMonitor):
                 f"{temperature.__class__}."
             )
         self.add_monitor_thread(self.watch_temperature, (temp,))
+        self.stats['temperature'] = f"{temp}C"
 
     def _configure_loadavg_monitor(self, loadavg, loadavg_interval):
         try:
@@ -65,6 +68,7 @@ class SystemMonitor(BaseMonitor):
                             f"Not {loadavg_interval}.")
         self.add_monitor_thread(self.watch_loadavg,
                                 (loadavg, loadavg_interval))
+        self.stats['loadavg'] = f">= {loadavg} (interval: {loadavg_interval})"
 
     def watch_temperature(self, temp):
         """
@@ -105,3 +109,7 @@ class SystemMonitor(BaseMonitor):
                 )
                 return True
             self.wait_loop()
+
+    @property
+    def monitoring(self):
+        return self.stats

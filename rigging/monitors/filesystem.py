@@ -41,6 +41,12 @@ class Filesystem(BaseMonitor):
         if not self.path.exists():
             raise Exception(f"Provided path '{path}' does not exist")
 
+        self.stats = {
+            'size': size,
+            'used_perc': used_perc,
+            'used_size': used_size
+        }
+
         if size:
             self.add_monitor_thread(self.watch_path_size, (size,))
 
@@ -111,3 +117,11 @@ class Filesystem(BaseMonitor):
                 )
                 return True
             self.wait_loop()
+
+    @property
+    def monitoring(self):
+        info = {'path': self.path.as_posix()}
+        for k, v in self.stats.items():
+            if v is not None:
+                info[k] = f">= {v}"
+        return info
