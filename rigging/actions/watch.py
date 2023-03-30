@@ -316,3 +316,10 @@ class WatchAction(BaseAction):
             )
             self.logger.info(f"Waiting for collectors {stopped} to stop")
             time.sleep(self.config['interval'])
+
+    @property
+    def produces(self):
+        return {
+            'file_content': [f['dest'] for f in self.files],
+            'command_output': [c['filename'] for c in self.commands]
+        }

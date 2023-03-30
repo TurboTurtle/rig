@@ -244,3 +244,7 @@ class SosAction(BaseAction):
 
         _config['command'] = cmd
         return _config
+
+    @property
+    def produces(self):
+        return "an sos report tarball for this system"
