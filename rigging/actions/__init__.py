@@ -197,3 +197,22 @@ class BaseAction():
                 f"{', '.join(f.split('/')[-1] for f in self.action_files)}"
             )
         return self.action_files
+
+    def get_info(self):
+        """
+        Get information on the action and it's configuration in a way that is
+        easily returned by the `rig info` command. This should be a dict that
+        can be converted to JSON (so type restrictions apply).
+
+        Calls the action's `produces` property.
+
+        :return: dict containing configuration information
+        """
+        return {
+            'type': self.action_name,
+            'produces': self.produces
+        }
+
+    @property
+    def produces(self):
+        return 'undefined'

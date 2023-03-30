@@ -8,7 +8,11 @@
 #
 # See the LICENSE file in the source distribution for further information.
 
+import json
+
 from rigging.commands import RigCmd
+from rigging.connection import RigDBusConnection
+from rigging.exceptions import DBusServiceDoesntExistError
 
 
 class InfoCmd(RigCmd):
@@ -20,7 +24,12 @@ class InfoCmd(RigCmd):
 
     @classmethod
     def add_parser_options(cls, parser):
-        parser.add_argument('-i', '--id', help='The ID of the rig')
+        parser.add_argument('rig_id', help='The ID of the rig')
 
     def execute(self):
-        print('placeholder')
+        try:
+            conn = RigDBusConnection(self.options['rig_id'])
+            _i = conn.info().result
+            self.ui_logger.info(json.dumps(_i, indent=4))
+        except DBusServiceDoesntExistError:
+            raise Exception(f"No such rig: {self.options['rig_id']}")

@@ -95,6 +95,7 @@ class BaseRig():
         self._dbus_listener = RigDBusListener(name, self.logger)
         self._dbus_listener.map_rig_command("destroy", self._destroy_self)
         self._dbus_listener.map_rig_command("describe", self.describe)
+        self._dbus_listener.map_rig_command("info", self.get_info)
         self.logger.debug(f"DBus service created for {name}.")
 
     def _find_monitor(self, monitor):
@@ -415,4 +416,30 @@ class BaseRig():
         _info['monitors'] = ','.join(mon.monitor_name for mon in self.monitors)
         _info['actions'] = ','.join(act.action_name for act in self.actions)
         _info['status'] = self._status
+        return _info
+
+    def get_info(self):
+        """
+        Called when `rig info` is executed and the rig receives the info
+        request via DBus. This should return a more informative look at the
+        running rig than `rig list` gives.
+        :return:
+        """
+        _info = {
+            'name': self.name,
+            'status': self._status,
+            'tmpdir': self.tmpdir,
+            'start_time': self.start_time.isoformat(),
+            'run_time': str(datetime.now() - self.start_time),
+            'interval': self.config['interval'],
+            'delay': self.config['delay'],
+            'repeat': self.config['repeat'],
+            'repeat_delay': self.config['repeat_delay'],
+            'monitors': [],
+            'actions': []
+        }
+        for ent in ['monitors', 'actions']:
+            for each in getattr(self, ent):
+                _info[ent].append(each.get_info())
+
         return _info
