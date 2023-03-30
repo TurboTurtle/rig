@@ -37,6 +37,9 @@ class MemoryMonitor(BaseMonitor):
             'slab': slab
         }
 
+        # save original state for info reports
+        self.stats = _mem_metrics.copy()
+
         if not any(m is not None for m in _mem_metrics.values()):
             raise Exception(
                 f"Must specify at least one of "
@@ -107,3 +110,11 @@ class MemoryMonitor(BaseMonitor):
                     )
                     return True
             self.wait_loop()
+
+    @property
+    def monitoring(self):
+        _info = {}
+        for k, v in self.stats.items():
+            if v is not None:
+                _info[k] = f">= {v}{'%' if k == 'percent' else ''}"
+        return _info
