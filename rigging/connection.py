@@ -117,6 +117,9 @@ class RigDBusConnection:
     def info(self):
         return self._communicate(RigDBusCommand('info'))
 
+    def trigger(self):
+        return self._communicate(RigDBusCommand('trigger'))
+
 
 class RigDBusListener(dbus.service.Object):
     """
@@ -267,3 +270,16 @@ class RigDBusListener(dbus.service.Object):
             msg = f"Could not determine info: {error}"
             self.logger.error(msg)
             err(Exception(msg))
+
+    @dbus.service.method('com.redhat.RigInterface', in_signature='',
+                         out_signature='a{ss}', async_callbacks=('ok', 'err'))
+    def trigger(self, ok, err):
+        """
+        Manually trigger a rig so that it executes its actions immediately
+        """
+        try:
+            _func = self._get_mapped_method('trigger', err)
+            ok(RigDBusMessage(_func(), True).serialize())
+        except Exception as error:
+            self.logger.error(f"Failed triggering: {error}")
+            err(Exception(error))
