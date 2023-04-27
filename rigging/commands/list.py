@@ -22,6 +22,8 @@ class ListCmd(RigCmd):
     `rig info` command.
     """
 
+    parser_description = 'List all current rigs on this system'
+
     def execute(self):
         bus = dbus.SessionBus()
         rigs = {}
