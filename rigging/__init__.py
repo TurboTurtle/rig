@@ -20,6 +20,7 @@ from datetime import datetime
 from rigging.connection import RigDBusListener
 from rigging.exceptions import CannotConfigureRigError, DestroyRig
 from rigging.utilities import load_rig_monitors, load_rig_actions
+from threading import Event
 
 
 class BaseRig():
@@ -54,7 +55,7 @@ class BaseRig():
         self.files = []
         self.monitors = []
         self.actions = []
-        self._triggered_from_cmdline = False
+        self._triggered_from_cmdline = Event()
         self.kdump_configured = False
 
     def _extrapolate_rig_defaults(self, config):
@@ -96,6 +97,7 @@ class BaseRig():
         self._dbus_listener.map_rig_command("destroy", self._destroy_self)
         self._dbus_listener.map_rig_command("describe", self.describe)
         self._dbus_listener.map_rig_command("info", self.get_info)
+        self._dbus_listener.map_rig_command("trigger", self._trigger_manual)
         self.logger.debug(f"DBus service created for {name}.")
 
     def _find_monitor(self, monitor):
@@ -343,10 +345,15 @@ class BaseRig():
         This thread will watch for a manual trigger request from the cmdline,
         and return True iff that request is made
         """
-        while not self._triggered_from_cmdline:
-            time.sleep(1)
-        self.logger.debug('Trigger from cmdline received. Triggering monitor')
+        self._triggered_from_cmdline.wait()
+        self.logger.info('Received trigger command from CLI, triggering...')
         return True
+
+    def _trigger_manual(self):
+        """
+        Trigger the rig immediately, as a request from the CLI.
+        """
+        self._triggered_from_cmdline.set()
 
     def create_archive(self):
         """
