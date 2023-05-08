@@ -1,0 +1,44 @@
+.TH rig-trigger 1 "May 2023"
+
+
+.SH NAME
+rig trigger - Manually trigger a rig's action right now
+
+.SH USAGE
+.B rig trigger <RIG_ID>
+
+.PP
+
+.SH DESCRIPTION
+\fBrig trigger\fR may be used to trigger a rig immediately, that is to cause it to stop
+monitoring for the configured condition(s) and jump straight to executing the configured
+action(s) specified in the rigfile.
+
+The rig will behave from the trigger point on exactly as if the configured monitor(s) had met
+the trigger condition(s). As such, users should expect a tarball to be created that contains the
+results of the rig's action(s) as well as the rig-specific log file.
+
+.SH OPTIONS
+.TP
+.B RIG_ID
+Provide the ID (name), or a space separated list of names, for for the rig(s) to trigger.
+Note that in the case of multiple IDs/names, the rigs will be triggered in the order given,
+and that rig will \fBnot\fR wait for one rig to finish its action execution before triggering
+the next rig in the list. For this reason, users should take care to not trigger multiple rigs
+that may have overlapping or conflicting actions.
+
+.SH EXAMPLES
+
+To trigger a single rig named 'myrig':
+
+  # rig trigger myrig
+
+To trigger multiple rigs with a single command:
+
+  # rig trigger myrig anotherrig thirdrig
+
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

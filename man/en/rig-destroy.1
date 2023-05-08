@@ -1,0 +1,42 @@
+.TH rig-destroy 1 "May 2023"
+
+
+.SH NAME
+rig destroy - Destroy a rig without triggering its configured actions
+
+.SH USAGE
+.B rig destroy <RIG_ID>
+
+.PP
+
+.SH DESCRIPTION
+\fBrig destroy\fR will forcibly terminate a running rig without triggering its
+configured actions. The rig's temporary directory will be removed, so users should be
+aware that the only trace of a destroyed rig's presence will be in the main rig log file,
+/var/log/rig/rig.log.
+
+.SH OPTIONS
+.TP
+.B RIG_ID
+
+Provide the ID (name) of a rig, or multiple rigs via a space-separated list, that
+should be destroyed. In the case of multiple rigs being destroyed, the rigs will be
+issued the destroy command serially in the order specified, but the command will \fBnot\fR
+wait for confirmation of the destruction of one rig before proceeding to the next.
+
+
+.SH EXAMPLES
+
+To destroy a single rig named 'myrig':
+
+  # rig destroy myrig
+
+To destroy multiple rigs in a single command:
+
+  # rig destroy myrig myotherrig yetanotherrig
+
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
