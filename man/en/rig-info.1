@@ -1,0 +1,25 @@
+.TH rig-info 1 "May 2023"
+
+
+.SH NAME
+rig info - Get detailed information on a rig
+
+.SH USAGE
+.B rig info <RIG_ID>
+
+.PP
+
+.SH DESCRIPTION
+\fBrig info\fR will provide detailed output about the configuration of a running
+rig, beyond what the backing rigfile may provide at first glance. The output is json-formatted
+which may make it consumable for non-human parsing.
+
+.SH OPTIONS
+.TP
+.B RIG_ID
+The ID (name) of the rig for which to get detailed status information.
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

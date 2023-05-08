@@ -1,0 +1,118 @@
+.TH rig-create 1 "May 2023"
+
+
+.SH NAME
+rig create \- Create a new rig based on a given rigfile
+
+.SH USAGE
+.B rig create [OPTIONS]
+
+.PP
+
+.SH DESCRIPTION
+
+\fBrig create\fR will take a rigfile provided via the \fB--config-file\fR option
+and deploy a new rig process based on that configuration. The deployed rig process
+will monitor for any defined conditions on the host, and once that condition is met
+take any configured actions. Once all actions are executed, the results are collected
+into a tar archive and the rig process exits.
+
+A rigfile is a yaml-formatted text file that provides the configuration for the individual
+rig process that will be launched as a result of any create commands executed. See the FIELDS
+section below for information on available and required fields.
+
+All rigs, and thus rigfiles, are required to have at least one monitor and at least
+one action to take once the monitored condition(s) is/are met.
+
+Example rigfiles may be found in the EXAMPLES section in this document.
+
+.SH OPTIONS
+.TP
+.B -f, --config-file FILE
+Path to the rigfile that should be used to deploy the desired rig.
+
+Default: rigfile.yaml
+
+.SH FIELDS
+
+The following are fields that are either acceptable or required for use in rigfiles.
+.TP
+.B name
+Give the rig a human-friendly name that can be used as a reference in other \fBrig\fR commands. If
+omitted, a randomly generated string will be used.
+.TP
+.B repeat
+If any configured actions are able to be repeated, do so this many times when the rig's
+monitored condition(s) are met. Note that not all actions are repeatable.
+.TP
+.B repeat_delay
+Wait this many seconds between repetitions of repeatable actions.
+.TP
+.B interval
+Wait this many seconds between polling of configured monitors for their specified
+condition.
+
+Default: 1 (cannot be lowered)
+.TP
+.B delay
+Wait this many seconds to trigger actions after the rig has been triggered by a monitor
+reaching its condition.
+.TP
+.B no_archive
+Do not create a tarball of the results, instead keep the temporary directory used by the rig
+in place when the rig terminates.
+
+Default: False
+.TP
+.B monitors
+\fBRequired.\fR The monitor(s) to configure to watch for specified conditions. This takes
+the form of a yaml dictionary, whose keys are the names of the monitors to use. Those keys in
+turn hold the configuration details to be passed to those monitors during rig setup.
+.TP
+.B actions
+\fBRequired.\fR The action(s) to execute once the rig has been triggered by at least one
+monitor. This takes the form of a yaml dictionary, whose keys are the names of the actions to
+use. Those keys in turn are dictionaries that provide the configuration details to those actions
+during rig setup.
+
+.SH EXAMPLES
+
+At a bare minimum, all rigfiles must provide at least one monitor and at least one
+action to be valid, for example:
+.LP
+  monitors:
+    logs:
+      message: 'this is my test message'
+  actions:
+    noop:
+      enabled: true
+.LP
+
+In this case, a new rig will be created that monitors certain log files for the literal
+string 'this is my test message', at which point the rig will execute the 'noop' action,
+which does nothing and is generally used for testing rig configurations.
+
+Since no \fBname\fR field was given, rig will randomly generate a name for this particular rig.
+
+A more complete rigfile that may actually be useful could look something like the following:
+.LP
+  name: lifesaver
+  interval: 5
+  monitors:
+    logs:
+      message: 'a more descriptive log message'
+  actions:
+    sos:
+      report: true
+.LP
+
+In this example, we name the rig 'lifesaver' which can then be used to reference this
+rig in any other \fBrig\fR command that accepts a rig ID. Further, we've instructed rig to
+only poll the log files every 5 seconds, and we've enabled the capture of an sos report.
+
+See \fBrig-monitors\fR and \fBrig-actions\fR for more information.
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
