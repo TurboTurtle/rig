@@ -71,7 +71,10 @@ def load_rig_commands():
     rig_cmds = {}
     modules = find_modules(cmds, 'rigging.commands', RigCmd)
     for mod in modules:
-        rig_cmds[mod[0].lower().rstrip('cmd')] = mod[1]
+        _name = mod[0].lower().rstrip('cmd')
+        if mod[1].name is not None:
+            _name = mod[1].name
+        rig_cmds[_name] = mod[1]
     return rig_cmds
 
 
