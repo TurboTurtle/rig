@@ -114,6 +114,8 @@ class Packet(BaseMonitor):
     """
 
     monitor_name = 'packet'
+    description = ('Trigger when network interface receives traffic matching '
+                   'a specification')
 
     def configure(self, interface, srcmac=None, dstmac=None, srcip=None,
                   dstip=None, srcport=None, dstport=None, tcpflags=None,

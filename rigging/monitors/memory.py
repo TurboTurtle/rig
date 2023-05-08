@@ -24,6 +24,7 @@ class MemoryMonitor(BaseMonitor):
     """
 
     monitor_name = 'memory'
+    description = 'Watch various memory usage statistics'
 
     def configure(self, percent=None, used=None, slab=None):
         """

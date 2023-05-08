@@ -21,6 +21,7 @@ class SystemMonitor(BaseMonitor):
     """
 
     monitor_name = 'system'
+    description = 'Monitor overall system load or temperature'
 
     def configure(self, temperature=None, loadavg=None, loadavg_interval=1):
         """

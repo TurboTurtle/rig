@@ -28,6 +28,7 @@ class Logs(BaseMonitor):
     """
 
     monitor_name = 'logs'
+    description = 'Watch log files and/or journals for specific messages'
 
     def configure(self, message, files='/var/log/messages', journals='system',
                   count=1):

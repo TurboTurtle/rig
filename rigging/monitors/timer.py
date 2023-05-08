@@ -50,6 +50,7 @@ class TimerMonitor(BaseMonitor):
     """
 
     monitor_name = 'timer'
+    description = 'Trigger after a set amount of time has elapsed'
 
     def configure(self, timeout, trigger_on_expiry=True):
         """
