@@ -25,6 +25,7 @@ class BaseMonitor():
     it needs to take.
     """
     monitor_name = 'Undefined'
+    description = 'description not set'
 
     def __init__(self, config, logger):
         """

@@ -33,6 +33,7 @@ class ProcessMonitor(BaseMonitor):
     """
 
     monitor_name = 'process'
+    description = 'Monitor a PID for state or resource consumption changes'
 
     def configure(self, procs, cpu_percent=None, memory_percent=None,
                   state=None, vms=None, rss=None):

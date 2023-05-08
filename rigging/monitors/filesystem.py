@@ -23,6 +23,7 @@ class Filesystem(BaseMonitor):
     """
 
     monitor_name = 'filesystem'
+    description = 'Monitor a filesystem, directory, or file for changes'
 
     def configure(self, path, size=None, used_perc=None, used_size=None):
         """

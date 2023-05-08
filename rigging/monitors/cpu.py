@@ -23,6 +23,7 @@ class CpuMonitor(BaseMonitor):
     """
 
     monitor_name = 'cpu'
+    description = 'Monitor various CPU metrics'
 
     def configure(self, percent=None, iowait=None, steal=None, system=None,
                   nice=None, guest=None, guest_nice=None, user=None):
