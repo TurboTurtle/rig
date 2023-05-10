@@ -17,6 +17,7 @@ class Noop(BaseAction):
     """
 
     action_name = 'noop'
+    description = 'Do nothing'
 
     def trigger(self):
         self.logger.info('No-op action triggered. Doing nothing.')

@@ -185,6 +185,7 @@ class WatchAction(BaseAction):
     """
 
     action_name = 'watch'
+    description = 'Periodically collect file and/or command output'
 
     def configure(self, files=None, commands=None, use_standard_set=False):
         """

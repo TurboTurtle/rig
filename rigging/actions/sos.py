@@ -33,6 +33,7 @@ class SosAction(BaseAction):
     """
 
     action_name = 'sos'
+    description = 'Generate an sos report or collect archive'
     required_binaries = ('sos', )
 
     def configure(self, report=None, collect=None, initial_archive=False,
