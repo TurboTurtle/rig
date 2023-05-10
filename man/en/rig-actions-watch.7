@@ -1,0 +1,113 @@
+.TH rig-actions-watch 7 "May 2023"
+
+.SH NAME
+rig action watch - Periodically collect file content and/or command output
+
+.SH DESCRIPTION
+The watch action allows users to periodically record particular data of interest
+at a set interval over the life of the rig. This action begins its collection when the
+rig is first deployed, and stops its collection once the rig has been triggered.
+
+For each file or command specified by this action's configuration, a recording file will
+be saved in the rig's archive. The contents of this file will be the content of the target file
+or the output of the target command, separated with a timestamp header. This allows users
+to track changes in system state over a time period leading up to the monitored condition.
+
+By using the \fBdelay\fR field in rigfiles, users may also continue to capture this information
+after a rig has been triggered up to the number of seconds specified by the delay value.
+
+Note that the periodicity of recordings is controlled by the rig's top-level \fBinterval\fR value,
+which defaults to every 1 second.
+
+.SH USAGE
+
+To use the watch action with a standardized set of files and commands to record, user may
+configure the following:
+
+.LP
+  actions:
+    watch:
+      use_standard_set: True
+.LP
+
+The collections enabled by use_standard_set are defined below.
+
+.SH FIELDS
+
+The watch action supports the following fields in its configuration:
+.TP
+.B files
+Specify the file or files to record. This field is a list of dictionaries that take the keys of
+'path' and optionally 'dest' to control what file is collected and what it is named inside the
+archive.
+
+  \fBpath\fR
+  The 'path' key specifies the path of the file to record. This must be a real filepath and not
+  a glob or similar.
+
+  \fBdest\fR
+  If provided, save the contents of the file specified by 'path' to a file named this in the archive.
+  If omitted, the name of the file specified via path is used.
+
+Accepts: list of yaml dictionaries with keys of 'path' and 'dest'
+.TP
+.B commands
+Specify the commands to routinely execute and save the output of. Commands will be saved to
+files named after the entire command syntax, with spaces converted to underscores. While in many cases it may not
+be required to do so, it is recommended to quote all commands that are passed any options.
+
+Note that embedded shell code will \fBnot\fR work here. If output needs to be piped or otherwise compiled between
+multiple commands, provide that functionality in a shell script and have the watch action call that script.
+
+Accepts: list of strings
+.TP
+.B use_standard_set
+Automatically load a standardized set of file and command collections that are traditionally
+useful to support organizations. Note that this is an all-or-nothing option, and specific
+collections within this set cannot be disabled. Any entries for \fBfiles\fR or \fBcommands\fR for
+this action's configuration will be in addition to this set, if enabled.
+
+  Files collected by use_standard_set:
+
+    /proc/interrupts
+    /proc/vmstat
+    /proc/net/softnet_stat
+    /proc/softirqs
+    /proc/net/sockstat
+    /proc/net/sockstat6
+    /proc/net/dev
+    /proc/net/sctp/assocs
+    /proc/net/sctp/snmp
+
+  Commands collected by use_standard_set:
+
+    netstat -s
+    nstat -az
+    ss -noemitaup
+    ps -alfe
+    top -c -b -n 1
+    numastat
+    ip neigh show
+    tc -s qdisc
+    tc -s class show dev $device (for any qdisc devices)
+
+.SH EXAMPLES
+
+A configuration in which the contents of 2 files and a command's output are collected:
+
+.LP
+  actions:
+    watch:
+      files:
+        - path: /etc/hostname
+        - path: /var/log/myservice_output.log
+          dest: service.log
+      commands:
+        - "uname -r"
+.LP
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
+

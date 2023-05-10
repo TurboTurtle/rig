@@ -1,0 +1,86 @@
+.TH rig-actions-gcore 7 "May 2023"
+
+.SH NAME
+rig action gcore - Collect an application memory dump via gcore
+
+.SH DESCRIPTION
+The gcore action allows users to collect an application memory dump (or "core") from
+a running application as a result of a rig being triggered.
+
+gcore is provided by GDB, which should be ubiquitous across Linux distributions, so in
+most use cases no additional packages need to be installed on the system in order to leverage
+this action.
+
+.SH USAGE
+
+Users may enable this action by specifying it as an action key in their rigfile, and
+providing it at least one process name or PID to capture.
+
+.LP
+  actions:
+    gcore:
+      procs: 24601
+.LP
+
+In the above example, when the accompanying rig is triggered this action will collect
+a memory dump file from the process with PID 24601.
+
+.SH FIELDS
+
+The gcore action supports the following fields as part of its configuration in a rigfile:
+
+.TP
+.B procs
+Required. Specify either single process or a list of processes to capture memory dumps from.
+Processes may use either PIDs or process names, such that they appear in output such as 'ps'.
+
+Accepts: string, integer, or list of strings and/or integers
+.TP
+.B freeze
+If enabled, gcore will "freeze" the process prior to initiating the memory dump. This involves
+sending a SIGSTOP to the process beforehand, and a SIGCONT after the memory dump is complete.
+
+Accepts: bool
+
+Default: False
+.TP
+.B repeat
+This action is repeatable, so users may collect multiple iterations of a memory dump from the same
+set of processes during its execution.
+
+Accepts: integer
+
+Default: 0
+.PP
+
+.SH EXAMPLES
+
+A basic gcore action configured for a single process, 'javert':
+.LP
+  actions:
+    gcore:
+      procs: javert
+.LP
+
+
+Another configuration that collects a total of 3 core dumps each from multiple processes,
+and sends a SIGSTOP to each before collecting the memory dumps:
+.LP
+  actions:
+    gcore:
+      repeat: 2
+      procs:
+        - 24601
+        - javert
+      freeze: True
+.LP
+
+
+.SH SEE ALSO
+.BR rig-create (1)
+.BR gcore (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

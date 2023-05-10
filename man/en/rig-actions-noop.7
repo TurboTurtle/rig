@@ -1,0 +1,28 @@
+.TH rig-actions-noop 7 "May 2023"
+
+.SH NAME
+rig action noop - An action that does nothing, but is useful for testing
+
+.SH DESCRIPTION
+The noop action does nothing. It is mainly useful in testing the configuration of
+a rig's monitors without triggering any real actions before users are confident that
+a given configuration meets their needs.
+
+.SH USAGE
+
+The noop action must be explicitly enabled:
+
+.LP
+  actions:
+    noop:
+      enabled: True
+.LP
+
+.SH FIELDS
+
+The noop action does not support any additional fields.
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

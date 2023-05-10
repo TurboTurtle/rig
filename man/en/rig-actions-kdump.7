@@ -1,0 +1,65 @@
+.TH rig-actions-kdump 7 "May 2023"
+
+.SH NAME
+rig action kdump - Initiate collection of a system vmcore via kdump
+
+.SH DESCRIPTION
+Kdump is a service that collects the memory state of the kernel at the time of a fatal system error
+and saves it to disk for later review - often referred to as a "vmcore". This actions facilitates
+forcing such a fatal error for the express purpose of generating a vmcore at the time a rig is triggered.
+
+Note that this action does \fBnot\fR perform any kind of validation on the local configuration of the kdump
+service. Users must ensure that kdump is functional prior to relying on this action. Further, users must be aware
+that initiating a kdump collection \fBwill restart the system on which rig is running.\fR Lastly, because kdump requires
+that the system be restarted as part of the collection process, the actual vmcore file will \fBnot\fR be included
+in the tar archive rig generates. It will instead be in the location configured by the kdump service.
+
+Specifically, this action leverages a system's /proc/sysrq-trigger feature in order to artificially
+induce a kernel panic.
+
+.SH USAGE
+This action requires an explicit setting of the 'enabled' setting to ensure that the use of this
+action is strictly intentional:
+
+.LP
+  actions:
+    kdump:
+      enabled: True
+.LP
+
+.SH FIELDS
+The kdump action supports the following fields as part of its configuration:
+
+.TP
+.B enabled
+Required. This field must be set to True in order for this action to be used.
+
+Accepts: bool
+
+Default: False
+.TP
+.B sysrq
+If set, write this value to /proc/sys/kernel/sysrq which may influence the behavior of the sysrq key.
+
+Accepts: integer
+
+Default: null
+
+.SH EXAMPLES
+
+Basic configuration which also enables the sysrq function if presently disabled:
+.LP
+  actions:
+    kdump:
+      enabled: True
+      sysrq: 1
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+.BR kdump.conf (5)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
