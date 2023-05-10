@@ -1,0 +1,98 @@
+.TH rig-actions-tcpdump 7 "May 2023"
+
+.SH NAME
+rig actions tcpdump - Collect a packet capture over the life of the rig
+
+.SH DESCRIPTION
+Users may configure this action in order to collect a packet capture over the course
+of the life of the rig. Unlike most actions, the tcpdump action begins its collections when
+the rig is first deployed, and terminates its collection once the rig is triggered.
+
+In other words, network traffic is recorded up until the problem a rig is configured to
+watch for occurs.
+
+Note that users may see a short delay in the setup of rigs using this action, as rig will
+attempt to validate that a packet capture is possible with the given configuration prior to
+monitoring for the problem condition.
+
+.SH USAGE
+The tcpdump action can be configured with as little as the name of the network interface users
+wish to capture network traffic with:
+
+.LP
+  actions:
+    tcpdump:
+      interface: eth0
+.LP
+
+.SH FIELDS
+
+The tcpdump action supports the following fields in order to control how the packet capture
+records network traffic:
+.TP
+.B interface
+Required. Provide the interface to capture network traffic with. This interface must really exist,
+and must be usable by tcpdump. A value of "any" may be used to listen across all interfaces, however
+that may render recorded traffic useless for analysis.
+
+Accepts: string
+.TP
+.B expression
+Provide a filtering expression for tcpdump to use, in order to restrict the amount of data recorded.
+If omitted all traffic across the interface is captured, which may result in either an extremely large
+pcap file, or may result in capture files being rotated frequently enough to overwrite the desired data.
+
+See \fBpcap-filter\fR(7) for expression syntax.
+
+Accepts: string
+.TP
+.B capture_count
+Save this many number of capture files. In conjunction with the \fBcapture_size\fR field this allows
+tcpdump to keep only the most recent (and therefore assumed to be most relevant) network traffic data.
+
+Accepts: integer
+
+Default: 1 (no rotated copies kept)
+.TP
+.B capture_size
+Limit each pcap file created by tcpdump to be this size, in MB, at most.
+
+Accepts: integer
+
+Default: 10
+.TP
+.B snapshot_length
+Capture this amount of \fBbytes\fR from each packet. Be careful in setting this value below
+tcpdump's default of 262144 bytes as this may render captured packets useless for analysis.
+
+Accepts: integer
+
+Default: 0 (use tcpdump default of 262144)
+
+.SH EXAMPLES
+
+Basic configuration that allows for 3 pcap files, capturing from eth0:
+.LP
+  actions:
+    tcpdump:
+      interface: eth0
+      capture_count: 3
+.LP
+
+A configuration that applies a packet filter expression:
+.LP
+  actions:
+    tcpdump:
+      interface: eth0
+      expression: "dst 192.168.0.1 and not udp"
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+.BR tcpdump (1)
+.BR pcap-filter (7)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

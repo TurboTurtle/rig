@@ -1,0 +1,268 @@
+.TH rig-actions-sos 7 "May 2023"
+
+.SH NAME
+rig action sos - Generate an sos report or collect archive
+
+.SH DESCRIPTION
+The sos action provides the ability to generate an \fB sos report\fR or \fB sos collect\fR
+archive as part of the response to a triggered rig. sos is a diagnostic collection utility that
+is often used by commercial support entities for Linux distributions, applications, and platforms.
+
+The most popular feature of sos is "report" which will gather troubleshooting data on a system
+based on that system's configuration. The data gathered includes system configuration details,
+log files, command output, and more.
+
+The "collect" functionality of sos is designed to provide a report archive from multiple nodes
+at the same time.
+
+This action can be used in place of piecemeal data collection due to the breadth and scope
+of data that sos gathers.
+
+
+.SH USAGE
+
+To use the sos action, simply specify it in the rigfile, along with \fBeither\fR the report or
+collect function, for example:
+
+.LP
+  actions:
+    sos:
+      report: enabled
+.LP
+
+In the above example, an sos report will be gathered according to utility and system defaults.
+
+In order to control how the sos report is executed, users may provide additional fields to "report"
+or "collect" rather than simply specifying "enabled". See FIELDS for more information.
+
+.SH FIELDS
+
+The sos action supports 3 primary fields in its configuration:
+
+.TP
+.B initial_archive
+If specified, this action will gather an archive before the rig begins monitoring
+for the configured event(s). This archive will be executed in the exact same way as the triggered collection will.
+
+Accepts: bool
+
+Default: False
+.TP
+.B report
+Have the local sos utility collect a "report" archive when the rig is triggered. If you wish for sos to execute using only
+defaults, set this field to "enabled". Otherwise, see below for additional configuration options that may be passed here.
+.TP
+.B collect
+Have the local sos utility generate a "collect" archive; that is an archive of "report" archives from different nodes.
+If you wish for sos to execute using only defaults, set this field to "enabled". Otherwise, see below for additional
+configuration options that may be passed here.
+.PP
+
+To control how sos gathers either a report or collect execution, define either "report" or "collect as a yaml dictionary,
+using any of the following fields for configuration.
+.PP
+
+.TP
+.B case_id
+The case or ticket reference number that this archive is being collected for, if any. This will be reflected in
+the archive name.
+
+Accepts: string or number
+
+Default: null
+.TP
+.B clean
+After the archive is collected, attempt to obfuscate sensitive items in the report. Note that this is the same as
+passing the \fB--clean\fR option to sos if you were to invoke it yourself.
+
+Accepts: bool
+
+Default: False
+.TP
+.B only_plugins
+Only run the plugins specified here, rather than relying on the sos utility to enable plugins based
+on system configuration (such as package installation).
+
+Accepts: list of plugin names
+
+Default: []
+.TP
+.B skip_plugins
+Do not run the plugins listed here if they would otherwise be enabled.
+
+Accepts: list of plugin names
+
+Default: []
+.TP
+.B enable_plugins
+Explicitly enable the plugins listed here, even if they would otherwise not be enabled.
+
+Accepts: list of plugin names
+
+Default: []
+.TP
+.B plugin_option
+Control plugin-specific options; analogous to passing sos the \fB-k\fR or \fB--plugin-option\fR option
+on the commandline.
+
+Plugin options take the form \fBplugin_name.option_name: value\fR.
+
+Accepts: A dictionary whose keys are plugin_name.option_name and whose values are the plugin option's value to set
+
+Default: {}
+.TP
+.B log_size
+Specify the maximum file size (in MB) that sos should gather for any particular collection.
+
+Accepts: integer
+
+Default: 25
+.TP
+.B skip_commands
+Users may specify certain commands to skip collection of, rather than disabling the whole
+plugin that executes those commands. Generally, these will need to be provided in the form of
+UNIX shell-style globs as the whole string is used for command matching.
+
+For example, use 'hostname*' to skip all commands that begin with the string 'hostname'.
+
+Accepts: list of strings
+
+Default: []
+.TP
+.B skip_files
+Skip collection files matching any pattern specified with this option. This option may
+be either the full file path, or a UNIX shell-style pattern (e.g. '/etc/*release').
+
+Accepts: list of strings
+
+Default: []
+.TP
+.B verify
+Instruct sos to leverage the host's package manager to verify all installed packages.
+Note that this may significantly increase the run time of the sos action (including if
+the \fBinitial_archive\fR option is set to True).
+
+Accepts: bool
+
+Default: False
+.PP
+
+In addition to the above, if this action is configured for \fBcollect\fR, the following
+additional fields may be used to control how the \fBsos collect\fR command is executed.
+
+\fBNOTE:\fR sos collect makes remote connections to nodes other than localhost in order to
+gather reports from those nodes. In most cases this is done via SSH multiplexing (but may be controlled
+by either the cluster_type or transport options). It is \fBassumed\fR that SSH keys are deployed for such
+connections to be made successfully.
+
+.TP
+.B primary
+Specify the primary node for collection. sos collect uses a primary node to enumerate of node
+address/hostnames which it will connect to in order to generate a report from. This is generally
+a cluster master, controller, manager, or similarly named entity.
+
+If no primary node is given, sos collect assumes that localhost can be used for such enumeration.
+
+Accepts: hostname or IP address (string)
+
+Default: None (localhost will be used)
+.TP
+.B cluster_type
+By default, sos collect attempts to identify any installed cluster software in order to be able
+to enumerate other nodes to gather reports from. Use this field to skip automatic detection and force
+the use of a given cluster profile. See \fBsos collect -l\fR for the cluster profiles your sos installation
+supported.
+
+Accepts: string
+
+Default: None
+.TP
+.B cluster_option
+Set cluster-specific options, similar to \fBplugin_option\fR above. Pass cluster options as a dictionary
+whose keys are the form of \fBcluster_name.option_name\fR and whose value is the value to set the option to.
+
+Accepts: dictionary
+
+Default: {}
+.TP
+.B nodes
+Provide a list of nodes to connect to in order to collect an sos report from them.
+Node addresses may either be hostnames (use FQDNs for best results) or IP addresses.
+
+Accepts: list of strings
+
+Default: []
+.TP
+.B no_local
+Do not capture an sos report from the localhost. This may be useful if the local system rig is running on
+is able to determine that a given cluster has an issue that warrants sos collection, but is not relevant to the
+actual troubleshooting that needs to happen for that cluster.
+
+Accepts: bool
+
+Default: False
+.TP
+.B ssh_user
+Specify the user to make remote connections as. Note that some non-SSH transports make use of this option to set the
+connecting user.
+
+Accepts: string
+
+Default: root
+.TP
+.B timeout
+Specify the amount of time in seconds to allow an \fBindividual\fR sos report collection to take before cancelling
+the collection of that node.
+
+Accepts: integer
+
+Default: 300
+.TP
+.B transport
+Specify the remote transport protocol to use to make connections to the nodes in order to general reports.
+See \fBsos-collect (1)\fR for a list of supported transports.
+
+Accepts: string
+
+Default: None (ssh will be used)
+.PP
+
+.SH EXAMPLES
+.PP
+Example configuration to gather a local report, disabling the 'cgroups' plugin, and configuring a kernel plugin option:
+.LP
+  actions:
+    sos:
+      report:
+        skip_plugins:
+          - cgroups
+        plugin_option:
+          kernel.trace: on
+.LP
+
+Another configuration that collects an initial baseline report prior to beginning monitoring, and does not specify any non-default
+behavior:
+.LP
+  actions:
+    sos:
+      initial_archive: True
+      report: enabled
+
+Action configuration to use the "collect" functionality, to collect from a cluster whose primary node is foo.bar.com:
+.LP
+  actions:
+    sos:
+      collect:
+        primary: foo.bar.com
+        no_local: True
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+.BR sos-report (1)
+.BR sos-collect (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
