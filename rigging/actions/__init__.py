@@ -44,6 +44,7 @@ class BaseAction():
 
     required_binaries = ()
     action_name = 'Undefined'
+    description = 'description not set'
     priority = 100
     repeatable = False
 

@@ -28,6 +28,7 @@ class KdumpAction(BaseAction):
     """
 
     action_name = 'kdump'
+    description = 'Generate a system vmcore via kdump'
     priority = 10000
 
     def configure(self, enabled, sysrq=None):

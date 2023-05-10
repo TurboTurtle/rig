@@ -34,6 +34,7 @@ class GcoreAction(BaseAction):
     """
 
     action_name = 'gcore'
+    description = 'Generate an application coredump via gcore'
     priority = 1
     required_binaries = ('gcore',)
     repeatable = True

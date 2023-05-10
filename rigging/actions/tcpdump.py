@@ -39,6 +39,7 @@ class TcpdumpAction(BaseAction):
     """
 
     action_name = 'tcpdump'
+    description = 'Collect a packet capture during the life of the rig'
     required_binaries = ('tcpdump',)
     priority = 2
 
