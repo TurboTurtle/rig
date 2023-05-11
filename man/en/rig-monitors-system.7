@@ -1,0 +1,59 @@
+.TH rig-monitors-system 7 "May 2023"
+
+.SH NAME
+rig monitor system - Watch the overall system load or temperature sensor
+
+.SH DESCRIPTION
+The system monitor may be used to watch overall system load, as reported by its loadavg, and/or
+the temperature of the cpu as reported by the temperature sensor.
+
+.SH USAGE
+A simple loadavg system monitor may be configured as easily as:
+
+.LP
+  monitors:
+    system:
+      loadavg: 4
+.LP
+
+.SH FIELDS
+The system monitors supports the following fields as part of its configuration:
+.TP
+.B loadavg
+The threshold value of the system's loadavg to trigger on. Note that loadavg is a rough
+value to indicate relatively how busy a system currently is.
+
+Accepts: integer or float
+.TP
+.B loadavg_interval
+Which loadavg interval should the monitor be considering. loadavg is reported in
+1, 5, and 15 minute intervals.
+
+Accepts: 1, 5, or 15
+
+Default: 1
+.TP
+.B temperature
+Threshold value of the cpu temperature in Celsius to trigger on, as reported by
+the cpu's temperature sensor.
+
+Note: in the case of multiple physical cpu packages, only the physical processor in
+slot 0 is considered.
+
+Accepts: integer
+
+.SH EXAMPLES
+A configuration watching a supposedly heavily utilized system for both load and
+temperature:
+
+.LP
+  monitors:
+    system:
+      loadavg: 41.99
+      temperature: 75
+.LP
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

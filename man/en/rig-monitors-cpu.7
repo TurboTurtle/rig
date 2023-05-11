@@ -1,0 +1,92 @@
+.TH rig-monitors-cpu 7 "May 2023"
+
+.SH NAME
+rig monitor cpu - Monitor CPU usage metrics
+
+.SH DESCRIPTION
+The cpu monitor allows users to trigger a rig based on the amount of cpu time that a system
+spends in a certain state or metric.
+
+Users may monitor for total cpu usage, or the amount of time spent in areas such as
+iowait, steal, and more, expressed as a percentage.
+
+.SH USAGE
+A cpu monitor may be defined with any or even all of the supported metrics. A basic example
+monitoring total cpu usage would be as follows:
+
+.LP
+  monitors:
+    cpu:
+      percent: 50
+.LP
+
+Which in this case would trigger the rig whenever total cpu usage goes over 50%.
+
+.SH FIELDS
+The cpu monitor supports the following fields as part of its configuration:
+.TP
+.B percent
+Monitor overall cpu usage as a percentage of total cpu available.
+
+Accepts: integer
+.TP
+.B iowait
+Threshold value for amount of cpu time where the cpu (or cpus) were idle during which
+the system had pending disk I/O, expressed as a percentage.
+
+Accepts: integer
+.TP
+.B steal
+Threshold value for amount of virtual cpu time spent waiting on the physical cpu, expressed
+as a percentage.
+
+Accepts: integer
+.TP
+.B system
+Threshold value for amount of time spent running kernel code, expressed as a percentage.
+
+Accepts: integer
+.TP
+.B nice
+Threshold value for amount of cpu time occupied by user level processes with positive nice
+values, expressed as a percentage.
+
+Accepts: integer
+.TP
+.B guest
+Threshold value for amount of cpu time spent running a virtual processor, expressed as a
+percentage.
+
+Accepts: integer
+.TP
+.B guest_nice
+Threshold value for amount of cpu time occupied by user level processes within a virtual processor
+with a positive nice value, expressed as a percentage.
+
+Accepts: integer
+.TP
+.B user
+Threshold value for amount of cpu time spent running user-mode code.
+
+Accepts: integer
+
+.SH EXAMPLES
+
+Any or all of the above fields may be used to configure this monitor. One configuration
+that watches overall usage as well as iowait time may look like this:
+
+.LP
+  monitors:
+    cpu:
+      percent: 60
+      iowait: 30
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
+

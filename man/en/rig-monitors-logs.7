@@ -1,0 +1,97 @@
+.TH rig-monitors-logs 7 "May 2023"
+
+.SH NAME
+rig monitor logs - Monitor log files and journals for matching content
+
+.SH DESCRIPTION
+The logs monitor allows users to trigger data collection based on the appearance of specific
+message(s) in specific log files or journals, which is likely the easiest way to identify when
+a problem condition has been hit.
+
+Users may provide either exact messages to match, or provide message patterns to allow for flexibility
+in the way a log message might appear.
+
+.SH USAGE
+The logs monitor requires at a minimum the message field to define what log message to look for:
+
+.LP
+  monitors:
+    logs:
+      message: "this is my test message"
+.LP
+
+By default this monitor will watch well-known logs and journals, but this may be more specifically
+defined by users. See FIELDS for more information.
+
+.SH FIELDS
+The logs monitor supports the following fields as part of its configuration:
+.TP
+.B message
+Required. Provide either the exact message string or a message pattern to trigger on.
+
+Note: for message patterns, rig supports the use of \fBpython\fR regular expressions. UNIX shell-style
+globs will not function as anticipated if they are used. See \fBpython -c 'import re; help(re)'\fR for
+more information of python regex syntax.
+
+The value passed to this field should be quoted for best results.
+
+Accepts: string
+.TP
+.B count
+Specify the number of times the message or message pattern must be matched. This counter is applied
+across all monitored files and journals simultaneously.
+
+Accepts: integer
+
+Default: 1
+.TP
+.B files
+Provide the file(s) to monitor for the specified message. These files must exist at the time of
+rig creation. Non-existing files will be ignored, rather than cause a configuration error. Set to
+null to not watch any files.
+
+Accepts: string or list of strings
+
+Default: /var/log/messages
+.TP
+.B journals
+Provide the journal unit(s) to monitor for the specified message. If it is not desired to
+watch any journals, set this to null. The default value of 'system' implies the entire journal
+is watched without filtering by specific units/services.
+
+Accepts: string or list of strings
+
+Default: system
+
+.SH EXAMPLES
+
+Basic configuration that watches the system journal and /var/log/foobar.log:
+
+.LP
+  monitors:
+    logs:
+      message: "this is my test message"
+      files: /var/log/foobar.log
+.LP
+
+This configuration uses a message pattern, requires being seen 3 times, and watches
+only two specific journals:
+
+.LP
+  monitors:
+    logs:
+      message: "Process with name myservice-(.*)? has crashed"
+      count: 3
+      files: null
+      journals:
+        - myservice
+        - another-service
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
