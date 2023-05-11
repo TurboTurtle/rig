@@ -1,0 +1,87 @@
+.TH rig-monitors-filesystem 7 "May 2023"
+
+.SH NAME
+rig monitor filesystem - Monitor a filesystem, directory, or file for changes
+
+.SH DESCRIPTION
+The filesystem monitor allows users to configure a rig to trigger actions once a particular
+change has occurred to a filesystem, directory, or specific file.
+
+These changes are focused around disk space usage, meaning for example a file reaching a
+certain size, or a filesystem reaching a low amount of available space left.
+
+Note that this monitor does not watch the actual contents of the target - for that, users
+should use the \fBlogs\fR monitor.
+
+.SH USAGE
+
+The filesystem monitor needs at minimum a path, and at least one defined size criteria:
+
+.LP
+  monitors:
+    filesystem:
+      path: /var/log/rig/rig.log
+      size: 1G
+.LP
+
+This configuration would trigger the rig once rig.log reaches a size of 1 GiB.
+
+.SH FIELDS
+The filesystem monitor supports the following fields as part of its configuration:
+.TP
+.B path
+Required. The path to monitor for size changes. This can be a directory or a file,
+but the path must currently exist on the system.
+
+Accepts: string
+.TP
+.B size
+The threshold size of the target path to trigger on. For directories this means the total
+combined size of all contents within the directory, recursively.
+
+Values may be specified using the common K, M, G, T, and P suffixes.
+
+Accepts: string
+.TP
+.B used_perc
+Instead of monitoring the size of path directly, monitor the total amount of space used
+for the backing filesystem, expressed as a percentage.
+
+Accepts: integer
+.TP
+.B used_size
+The threshold size for total amount of space used for the backing filesystem, rather than
+the size of path directly.
+
+Values may be specified using the common K, M, G, T, and P suffixes.
+
+Accepts: string
+
+.SH EXAMPLES
+
+A basic configuration watching a directory growing over 2 GiB in size:
+
+.LP
+  monitors:
+    filesystem:
+      path: /var/log/myservice
+      size: 2G
+.LP
+
+In this example, rig will monitor the filesystem backing the path specified and trigger
+when it is 80% used or more:
+
+.LP
+  monitors:
+    filesystem:
+      path: /mnt/external_backup/
+      used_perc: 80
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

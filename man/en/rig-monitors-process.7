@@ -1,0 +1,118 @@
+.TH rig-monitors-process 7 "May 2023"
+
+.SH NAME
+rig monitor process - Watch a process for a change in state or resource consumption
+
+.SH DESCRIPTION
+The process monitor allows users to watch a process, or set of processes, for changes in
+their state and/or for reaching certain resource consumption thresholds.
+
+Processes may be specified either by PID or by name.
+
+.SH USAGE
+The process monitor requires at least one process name or PID, and at least one metric
+to watch:
+
+.LP
+  monitors:
+    process:
+      procs: 24601
+      cpu_percent: 50
+.LP
+
+.SH FIELDS
+The process monitor supports the following fields as part of its configuration:
+.TP
+.B procs
+Required. Specify the name or PID of the process (or processes) to monitor. If given
+a name that matches multiple processes, all matched processes will be watched independently.
+
+Accepts: string, integer, or list of strings and integers
+.TP
+.B cpu_percent
+The threshold amount of total cpu time consumed by the process to trigger on, expressed
+as a percentage.
+
+Accepts: integer
+.TP
+.B memory_percent
+The threshold amount of total memory consumed by the process to trigger on.
+
+Values may use the common K, M, G, or T suffixes.
+
+Accepts: string
+.TP
+.B rss
+The threshold amount of resident set size of the process to trigger on.
+
+Values may use the common K, M, G, or T suffixes.
+
+Accepts: string
+.TP
+.B vms
+The threshold virtual memory size of the process to trigger on.
+
+Values may use the common K, M, G, or T suffixes.
+
+Accepts: string
+.TP
+.B state
+The state of the process to trigger - either when the process enters the given state,
+or leaves a desired state.
+
+The states that can be monitored are defined below - users may specify the name or short-hand
+in the value of this field.
+
+        NAME                SHORT HAND          DESCRIPTION
+        running             R, run              The process is actively running
+        sleeping            S, sleep            The process is currently sleeping
+        stopped             T, stop             The process has been stopped (SIGSTOP)
+        uninterruptible     D, UN, disk_sleep   Process is in uninterruptible sleep
+        zombie              Z                   Process is a zombie
+
+
+The default behavior of process monitors using the state field is to trigger when the
+process \fBenters\fR the specified state. For example, setting this to 'D' will cause
+the monitor to trigger the rig only when the process enters an uninterruptible sleep.
+
+This can be inverted however, by prefixing a '!' before the name or short hand for this value.
+For example using '!sleeping' will trigger the rig whenever the process is \fBnot\fR sleeping.
+
+Note: if the value of this is set to '!running', the rig will \fBnot\fR be triggered when the
+process is sleeping, as it is common for "processes that are running" to frequently sleep. The
+rig \fBwill\fR trigger however if the process exits.
+
+Accepts: string
+
+.SH EXAMPLES
+A basic configuration that watches a single process for cpu or memory consumption:
+
+.LP
+  monitors:
+    process:
+      procs: 24601
+      cpu_percent: 75
+      memory_percent: 50
+      rss: 4G
+.LP
+
+The following configuration will watch multiple processes by both PID and process name
+to stop running:
+
+.LP
+  monitors:
+    process:
+      procs:
+        - 24601
+        - javert
+      state: "!running"
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+.BR ps(1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi

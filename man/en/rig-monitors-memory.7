@@ -1,0 +1,68 @@
+.TH rig-monitors-memory 7 "May 2023"
+
+.SH NAME
+rig monitor memory - Watch system memory utilization metrics
+
+.SH DESCRIPTION
+The memory monitor allows users to trigger a rig based on the current usage of system memory,
+ and/or by select metrics about memory allocation.
+
+.SH USAGE
+The memory monitor is most commonly configured to watch total consumption of system memory:
+
+.LP
+  monitors:
+    memory:
+      percent: 80
+.LP
+
+.SH FIELDS
+The memory monitor supports the following fields as part of its configuration:
+.TP
+.B percent
+The threshold value of total system memory consumption to trigger on, expressed as
+a percentage.
+
+Note that this is calculated as follows:
+    (total - available) / total * 100
+
+In this calculation, available memory is defined as memory that can be given instantly
+to processes with the system going to swap.
+
+Accepts: integer or float
+.TP
+.B used
+The threshold value for the amount of actively used memory to trigger on.
+
+This is different from the 'percent' field. 'used' memory is calculated as:
+    total - free
+
+Values may use the common K, M, G, or T suffixes.
+
+Accepts: string
+.TP
+.B slab
+The amount of memory currently held in slabs.
+
+Values may use the common K, M, G, or T suffixes.
+
+Accepts: string
+
+.SH EXAMPLES
+In addition to the basic percent example shown in USAGE above, the fields may be
+used simultaneously with each other:
+
+.LP
+  monitors:
+    memory:
+      percent: 80
+      slab: 1G
+.LP
+
+.SH SEE ALSO
+.BR rig-create (1)
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
