@@ -1,0 +1,62 @@
+.TH rig-monitors-timer 7 "May 2023"
+
+.SH NAME
+rig monitor timer - Ensure a rig is triggered after a certain amount of time
+
+.SH DESCRIPTION
+The timer monitor may be used to force a rig to trigger, or alternatively to destroy itself without
+triggering, after a given amount of time. This can be useful to make sure that rigs do not live past
+their intended use case.
+
+.SH USAGE
+The timer monitor may be configured with as little as a single option:
+
+.LP
+  monitors:
+    timer:
+      timeout: 1h
+.LP
+
+.SH FIELDS
+The timer monitor supports the following fields as part of its configuration:
+.TP
+.B timeout
+Required. Specify the amount of time to wait before this rig should be triggered.
+
+The following suffixes are used to denote how long a timeout should be:
+
+    s   seconds
+    m   minutes
+    h   hours
+    d   days
+    w   weeks
+
+These may be chained together in a single string, for example '1d4h30m' may be used
+to denote 1 day, 4 hours, and 30 minutes for a timeout.
+
+Accepts: string
+.TP
+.B trigger_on_expiry
+The default behavior of this monitor is to trigger the rig once the timeout has passed,
+which implies the execution of all configured actions. This may be disabled, so that a rig simply
+terminates itself without executing any of its actions, by setting this to False.
+
+Accepts: bool
+
+Default: True
+
+.SH EXAMPLES
+This configuration will wait 7 days for the rig to trigger, after which time this monitor
+will cause the rig to terminate without executing its actions:
+
+.LP
+  monitors:
+    timer:
+      timeout: 1w
+      trigger_on_expiry: False
+.LP
+
+.SH MAINTAINER
+.nf
+Jake Hunsaker <jhunsake@redhat.com>
+.fi
