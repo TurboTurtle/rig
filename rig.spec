@@ -1,6 +1,6 @@
 Name:       rig
 Summary:    Monitor a system for events and trigger specific actions
-Version:    1.1
+Version:    2.0a
 Release:    1%{?dist}
 Url:        https://github.com/TurboTurtle/rig
 Source0:    %{url}/archive/%{name}-%{version}.tar.gz
@@ -28,13 +28,13 @@ troubleshooting and data collection for randomly occurring events.
 %py3_build
 
 %install
-mkdir -p ${RPM_BUILD_ROOT}%{_mandir}/man1
-install -p -m644 man/en/rig.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %py3_install
 
 %files
 %{_bindir}/rig
 %{_mandir}/man1/*
+%{_mandir}/man7/*
+
 
 %{python3_sitelib}/rig-*.egg-info/
 %{python3_sitelib}/rigging/

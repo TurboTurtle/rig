@@ -22,6 +22,8 @@ from rigging.exceptions import CannotConfigureRigError, DestroyRig
 from rigging.utilities import load_rig_monitors, load_rig_actions
 from threading import Event
 
+__version__ = '2.0'
+
 
 class BaseRig():
     """
