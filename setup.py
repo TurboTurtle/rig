@@ -1,5 +1,14 @@
+import os
+
 from setuptools import setup, find_packages
 from rigging import __version__ as VERSION
+
+def get_man_pages(section):
+    """Helper to always include all man pages in dist tarball"""
+    _dir = 'man/en/'
+    return [
+        os.path.join(_dir, m) for m in os.listdir(_dir) if m.endswith(section)
+    ]
 
 setup(
     name='rig',
@@ -26,5 +35,6 @@ setup(
     scripts=['rig'],
     data_files=[
         ('share/licenses/rig', ['LICENSE']),
-        ('share/man/man1/', ['man/en/rig.1'])
+        ('share/man/man1/', get_man_pages('1')),
+        ('share/man/man7/', get_man_pages('7'))
     ])
